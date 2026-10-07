@@ -2,153 +2,152 @@
 
 A psychology experiment that tests whether a stock chart's candle timeframe
 (1-minute, 5-minute, 10-minute or 1-hour) changes trading behavior and how
-volatile the stock feels. Built for iPad Safari in landscape orientation.
+volatile the stock feels. It is built for iPad Safari in landscape
+orientation.
 
 The site is plain HTML, CSS and JavaScript (no build step), hosted on
 **Vercel**, with small serverless functions in `api/`. Data is saved to a
-Google Sheet through a Google Apps Script web app.
-
-## How data gets saved
+Google Sheet through a Google Apps Script web app. The full experiment design
+(Latin square, timing, data columns) is in
+[`docs/EXPERIMENT.md`](docs/EXPERIMENT.md).
 
 ```
-iPad (Safari)  -->  your-site.vercel.app/api/save  -->  Google Apps Script  -->  Google Sheet
+iPad (Safari)  -->  your-site.vercel.app/api/...  -->  Google Apps Script / Alpaca
 ```
 
-The iPad only ever talks to your own site's address. The school network
-therefore only needs to allow `*.vercel.app`, and the Google Script URL and
-API key stay hidden on the server.
+The iPad only ever talks to your own site's address. The school network only
+needs to allow `*.vercel.app`, and your keys stay hidden on the server.
 
-## Files
+## Pages
 
-| File | What it is |
+| Address | What it is |
 |---|---|
-| `public/` | Everything the browser loads (pages, styles, scripts) |
-| `public/test.html`, `public/js/test.js` | Stage 0 connection test page |
-| `public/css/style.css` | Shared styles (colors are set at the top) |
-| `api/save.js` | Serverless function that forwards data to Google Sheets |
-| `google-apps-script/Code.gs` | Code you paste into Google Apps Script |
-| `vercel.json` | Tells Vercel to serve the `public/` folder |
-| `.env.example` | List of secret settings. Copy it to `.env` for local scripts. `.env` is never committed. |
+| `/` (Home) | Bull photo, project title, start button |
+| `/simulation.html` | The experiment (needs the researcher code) |
+| `/about.html` | About Us text and credits |
+| `/market.html` | Live stock charts for visitors |
+| `/builder.html` | Researcher only: builds the real experiment data from Alpaca |
+| `/test.html` | Connection test (Stage 0) |
 
-## Build plan
+## Files you edit
 
-| Stage | What gets built | What you test |
+| What | File | Look for |
 |---|---|---|
-| 0 | Hosting + Google Sheets test page | Site opens and saves a row on the school iPad and Wi-Fi |
-| 1 | Download script for 4 stocks x 3 days of 1-minute data, aggregated to 5m/10m/1h, rescaled and renamed, saved as a data file | Volatility report, data file looks right |
-| 2 + 3 | Site tabs, experiment flow, Latin square, trading logic, bundled Lightweight Charts | Run the whole experiment on a laptop |
-| 4 | iPad polish: landscape lock, no zoom/scroll, numeric keypad, resume after refresh | Run it on the iPad |
-| 5 | Logging every action to Sheets after each stock, retries, local backup, CSV download, failure warning | Turn Wi-Fi off mid-session and check nothing is lost |
-| 6 | Market Data tab with live charts through the serverless function | Look up a few tickers |
+| Bull photo | `public/images/charging-bull.jpg` (add this file) | see `public/images/README.txt` |
+| Photo credit and project title | `public/index.html` | `EDIT PHOTO CREDIT`, `EDIT PROJECT TITLE` |
+| About Us text | `public/about.html` | `EDIT ABOUT US TEXT BELOW` |
+| Consent text | `public/simulation.html` | `EDIT CONSENT TEXT BELOW` |
+| Timing, cash, number of checkpoints | `public/js/config.js` | comments next to each number |
+
+To edit a file without installing anything: open it on github.com, click the
+pencil icon, make the change, and click **Commit changes**. Vercel puts the
+change online automatically in about a minute.
+
+## Secret settings (Vercel > Project > Settings > Environment Variables)
+
+| Key | Value |
+|---|---|
+| `SHEETS_URL` | Google Apps Script web app URL (ends in `/exec`) |
+| `ALPACA_KEY_ID` | Alpaca API Key ID |
+| `ALPACA_SECRET_KEY` | Alpaca Secret Key |
+| `RESEARCHER_CODE` | A password you make up. Only you use it. |
+
+After adding or changing any of these, go to **Deployments**, open the **...**
+menu on the newest deployment, and click **Redeploy**. Never put these values in
+a code file; this repository is public. For local scripts, copy `.env.example`
+to `.env`. `.env` is ignored by git.
 
 ---
 
-## Stage 0: hosting test (what you need to do)
+## Step 1. Google Sheet and Apps Script (personal Google account)
 
-Each step says exactly where to click. It takes about 20 minutes.
+Use a **personal Google account**, not your school account. School accounts
+only allow access "within the district", and then saving fails.
 
-### Step 1. Create the Google Sheet and Apps Script
-
-Use a **personal Google account**, not your school account. School Google
-accounts often stop scripts from being shared with "Anyone", and the site
-needs that setting to work.
-
-1. Go to <https://sheets.google.com> and create a blank spreadsheet. Name it
+1. Go to <https://sheets.google.com> and create a blank spreadsheet named
    `Stock Chart Study Data`.
-2. In the sheet, open **Extensions > Apps Script**. A new tab opens with a
-   file called `Code.gs`.
-3. Delete everything in `Code.gs`. Paste in the whole contents of
-   `google-apps-script/Code.gs` from this project.
-4. Click the save icon (or press Cmd+S). Name the project `Stock Chart Study`
-   if it asks.
-
-### Step 2. Deploy the Apps Script as a web app
-
-1. In Apps Script, click **Deploy > New deployment**.
-2. Click the gear icon next to "Select type" and choose **Web app**.
-3. Fill in:
-   - Description: `v1`
-   - Execute as: **Me**
-   - Who has access: **Anyone**
-4. Click **Deploy**, then **Authorize access** and choose your Google account.
-5. Google shows a warning: "Google hasn't verified this app". This is normal
-   for a script you wrote yourself. Click **Advanced**, then
-   **Go to Stock Chart Study (unsafe)**, then **Allow**.
-6. Copy the **Web app URL**. It ends in `/exec`. Keep it somewhere private.
-   Anyone with this URL can add rows to your sheet.
-7. Check it: paste the URL into a new browser tab. You should see
-   `{"ok":true,"message":"Apps Script is running"}`.
+2. Click **Extensions > Apps Script**. Delete everything in `Code.gs`, paste in
+   all of [`google-apps-script/Code.gs`](google-apps-script/Code.gs), and
+   click the save icon.
+3. Click **Deploy > New deployment**. Next to "Select type", click the gear icon
+   and choose **Web app**. Set **Execute as: Me** and **Who has access:
+   Anyone**, then click **Deploy**.
+4. Click **Authorize access**. When you see "Google hasn't verified this app",
+   click **Advanced**, then **Go to ... (unsafe)**, then **Allow**. This is
+   normal for your own script.
+5. Copy the **Web app URL** (second Copy button, ends in `/exec`).
+6. Check it in a private or incognito window. It must show
+   `{"ok":true,"message":"Apps Script is running"}`. If it shows a sign-in page,
+   the access setting is wrong.
+7. Put the URL in Vercel as `SHEETS_URL` and redeploy.
 
 **If you change `Code.gs` later**, keep the same URL by redeploying this way:
-**Deploy > Manage deployments >** pencil icon **> Version: New version > Deploy**.
-If you click "New deployment" instead, you get a new URL.
+**Deploy > Manage deployments >** pencil icon **> Version: New version >
+Deploy**.
 
-### Step 3. Create a Vercel account
+## Step 2. Connection test (school iPad, school Wi-Fi)
 
-1. Go to <https://vercel.com/signup>.
-2. Choose **Hobby** (free, for personal and non-commercial projects). Enter
-   your name.
-3. Click **Continue with GitHub** and sign in with the GitHub account that owns
-   this repository.
+1. Open `https://<your-project>.vercel.app/test.html` in Safari. Private
+   Browsing must be off.
+2. All checks should be green.
+3. Tap **Save test row**. A **Test** tab should appear in your sheet.
 
-### Step 4. Import this project into Vercel
+## Step 3. Real stock data (one time)
 
-1. In the Vercel dashboard, click **Add New... > Project**.
-2. Find `stock-market-sim` in the list and click **Import**. If it isn't
-   listed, click **Adjust GitHub App Permissions** and give Vercel access to
-   the repository.
-3. On the "Configure Project" screen:
-   - Framework Preset: **Other**
-   - Root Directory: leave as `./`
-   - Build and Output Settings: leave as they are (`vercel.json` handles this)
-4. Open **Environment Variables** and add one:
-   - Key: `SHEETS_URL`
-   - Value: the `/exec` URL from Step 2
-5. Click **Deploy**. After about a minute you get a link like
-   `https://stock-market-sim-xxxx.vercel.app`.
+1. Get Alpaca keys at <https://alpaca.markets>. A free paper-trading account
+   is enough: go to **API Keys > Generate New Keys**. The secret is shown only
+   once.
+2. Add `ALPACA_KEY_ID`, `ALPACA_SECRET_KEY` and `RESEARCHER_CODE` in Vercel and
+   redeploy.
+3. Open `https://<your-project>.vercel.app/builder.html` and enter your
+   researcher code.
+4. Tap **Check 1-minute history** to see how far back Alpaca's 1-minute data
+   goes for your account.
+5. Keep the suggested stocks or type your own, then tap **Build data file**.
+   Check the volatility report, then tap **Download stocks.json**.
+6. Upload the file: on github.com open this repository, go into the
+   `public/data` folder, and click **Add file > Upload files**. Choose
+   `stocks.json` and click **Commit changes**.
+7. About a minute later the "Placeholder data" warning on the researcher
+   screen disappears.
 
-**Where secrets go later.** Secrets (like the Alpaca keys `ALPACA_KEY_ID` and
-`ALPACA_SECRET_KEY` in Stage 1) are
-entered in **Project > Settings > Environment Variables**. After you add or
-change one, it only takes effect after a redeploy: **Deployments >** the "..."
-menu on the newest deployment **> Redeploy**.
+Until you do this, the experiment runs on made-up placeholder prices so you can
+try it out.
 
-### Step 5. Check the production branch
+## Step 4. Running a participant
 
-The code is on the branch `claude/stock-chart-psychology-exp-8adbkf`. Vercel
-only makes a public link for the **production branch**. Other branches get
-"preview" links that ask for a Vercel login, and that login screen would
-appear on the school iPad.
+1. Turn the iPad to landscape, open `/simulation.html`, and enter the
+   researcher code.
+2. On the researcher screen, check that the sending status has no red warning.
+   The version rotates automatically 1 > 2 > 3 > 4; you can override it.
+3. Tap **Start new session** and hand the iPad to the participant.
+4. When they finish, press and hold the **top-left corner** of the screen for 3
+   seconds and enter the code. This hidden exit also works in the middle of a
+   session.
+5. If the page is closed or refreshed by accident, open `/simulation.html`
+   again. It offers to resume the participant where they left off.
 
-1. Go to **Project > Settings > Git** (on some versions it is under
-   **Settings > Environments > Production**).
-2. Make sure **Production Branch** is `claude/stock-chart-psychology-exp-8adbkf`.
-   If you change it, go back to **Deployments** and redeploy.
-3. Always use the main domain shown on the project's overview page
-   (`https://<project-name>.vercel.app`). Don't use the long preview links.
+**Getting the data.** Rows appear in your Google Sheet after every stock, in
+the tabs **Actions**, **Summary** and **Sessions**. The iPad also keeps a
+backup copy: the researcher screen has **Actions CSV / Summary CSV / Sessions
+CSV** buttons that save files to the iPad's Files app (Downloads folder). If a
+send fails, the researcher screen shows a red warning and keeps retrying.
 
-### Step 6. Test on the school iPad
+## If something fails
 
-1. On the school iPad, connected to **school Wi-Fi**, open Safari. Make sure
-   Private Browsing is **off**.
-2. Go to `https://<your-project-name>.vercel.app/test.html`.
-3. All the checks should show green:
-   - Page and script loaded: **Yes**
-   - Server function: **Working**
-   - Google Sheets URL set in Vercel: **Yes**
-   - Device storage: **Works**
-4. Tap **Save test row**. It should say "Saved. Rows added: 1".
-5. Open your Google Sheet. A new tab named **Test** should have your row. A
-   tab called **_batches** also appears. It's used to prevent duplicate saves,
-   so leave it there.
-
-### If something fails
-
-| What you see | What it means / what to do |
+| What you see | What to do |
 |---|---|
-| The page doesn't load at all, or a school "blocked" page appears | The school filter blocks `vercel.app`. Ask IT to allow `*.vercel.app`, or tell me and we'll switch hosts. |
-| Server function: **Not reachable** | Deployment problem. Check the latest deployment in Vercel finished with "Ready". |
-| Google Sheets URL set: **No** | `SHEETS_URL` is missing or misspelled. Fix it in Settings > Environment Variables, then redeploy. |
-| "Google did not return JSON" | In Apps Script, the web app access isn't set to **Anyone**, or the URL isn't the `/exec` one. |
-| A Vercel login page appears | You opened a preview link. Use the production domain (Step 5). |
-| Device storage: **Blocked** | Turn off Private Browsing. Local backups need storage. |
+| School "blocked" page | Ask IT to allow `*.vercel.app` |
+| Test page: Google Sheets URL set: No | Add `SHEETS_URL`, then redeploy |
+| "Google did not return JSON" | The Apps Script access isn't **Anyone**, or you used a school account |
+| A Vercel login page appears | You opened a preview link. Use the main `<project>.vercel.app` address |
+| Researcher code says "not set" | Add `RESEARCHER_CODE`, then redeploy |
+| Market Data or Data Builder says the keys are missing | Add both Alpaca keys, then redeploy |
+| Device storage: Blocked | Turn off Private Browsing |
+
+## Credits
+
+Charts: [TradingView Lightweight Charts™](https://www.tradingview.com/),
+Copyright (c) 2025 TradingView, Inc., Apache License 2.0 (bundled in
+`public/vendor/lightweight-charts/`). Market data:
+[Alpaca](https://alpaca.markets/).
