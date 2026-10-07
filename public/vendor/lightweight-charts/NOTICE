@@ -1,0 +1,6 @@
+TradingView Lightweight Charts™
+Copyright (с) 2025 TradingView, Inc. https://www.tradingview.com/
+
+This folder contains lightweight-charts version 5.2.1 (standalone production build),
+copied unmodified from the npm package so the site does not load it from a CDN.
+Licensed under the Apache License 2.0 (see LICENSE in this folder).
