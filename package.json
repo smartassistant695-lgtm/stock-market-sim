@@ -1,0 +1,6 @@
+{
+  "name": "stock-market-sim",
+  "private": true,
+  "type": "module",
+  "description": "Stock chart timeframe experiment (static site + Vercel serverless functions)"
+}

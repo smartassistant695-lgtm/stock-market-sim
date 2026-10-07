@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connection Test</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="topbar">Stock Chart Study <span class="sub">Connection test</span></div>
+  <div class="page">
+    <div class="panel">
+      <h2>Checks</h2>
+      <div class="row"><span class="label">Page and script loaded</span><span id="c-page" class="bad">No</span></div>
+      <div class="row"><span class="label">Server function (/api/save)</span><span id="c-func">Checking...</span></div>
+      <div class="row"><span class="label">Google Sheets URL set in Vercel</span><span id="c-url">Checking...</span></div>
+      <div class="row"><span class="label">Device storage (for backups)</span><span id="c-storage">Checking...</span></div>
+      <div class="row"><span class="label">Screen size</span><span id="c-screen" class="num"></span></div>
+      <div class="actions">
+        <button id="save" class="btn" type="button">Save test row</button>
+        <p id="result" class="num" aria-live="polite"></p>
+        <p class="note">After saving, open your Google Sheet and look for a tab named "Test".</p>
+      </div>
+    </div>
+  </div>
+  <script src="js/test.js"></script>
+</body>
+</html>

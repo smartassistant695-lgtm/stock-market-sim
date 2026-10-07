@@ -1,0 +1,9 @@
+# Secrets - never commit these
+.env
+.env.*
+!.env.example
+
+# Tool folders
+.vercel/
+node_modules/
+.DS_Store
