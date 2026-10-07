@@ -107,7 +107,8 @@ If you click "New deployment" instead, you get a new URL.
 5. Click **Deploy**. After about a minute you get a link like
    `https://stock-market-sim-xxxx.vercel.app`.
 
-**Where secrets go later.** Secrets (like the stock API key in Stage 1) are
+**Where secrets go later.** Secrets (like the Alpaca keys `ALPACA_KEY_ID` and
+`ALPACA_SECRET_KEY` in Stage 1) are
 entered in **Project > Settings > Environment Variables**. After you add or
 change one, it only takes effect after a redeploy: **Deployments >** the "..."
 menu on the newest deployment **> Redeploy**.
