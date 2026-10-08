@@ -81,6 +81,18 @@ only allow access "within the district", and then saving fails.
    the access setting is wrong.
 7. Put the URL in Vercel as `SHEETS_URL` and redeploy.
 
+**If Apps Script won't open or gives an error**, the usual cause is being
+signed in to your school and personal accounts at the same time: Apps Script
+then opens with the wrong one. Fixes, easiest first:
+- Do all of Step 1 in a **private / incognito window** where you sign in with
+  only your personal account.
+- Or go to <https://script.google.com> (signed in as your personal account),
+  click **New project**, and paste the code there. Then set `SHEET_ID` at the
+  top of the code to your sheet's ID: the long part of the sheet's address
+  between `/d/` and `/edit`.
+- School-managed computers and Chromebooks may block personal accounts
+  completely. Use a home computer or a parent's computer.
+
 **If you change `Code.gs` later**, keep the same URL by redeploying this way:
 **Deploy > Manage deployments >** pencil icon **> Version: New version >
 Deploy**.
@@ -120,7 +132,10 @@ try it out.
    researcher code.
 2. On the researcher screen, check that the sending status has no red warning.
    The version rotates automatically 1 > 2 > 3 > 4; you can override it.
-3. Tap **Start new session** and hand the iPad to the participant.
+3. Tap **Start new session** and hand the iPad to the participant. For the
+   strongest lockdown, turn on Guided Access (Settings > Accessibility >
+   Guided Access, then triple-click the top button) or open the site from a
+   Home Screen icon (Share > Add to Home Screen).
 4. When they finish, press and hold the **top-left corner** of the screen for 3
    seconds and enter the code. This hidden exit also works in the middle of a
    session.
@@ -142,6 +157,7 @@ send fails, the researcher screen shows a red warning and keeps retrying.
 | "Google did not return JSON" | The Apps Script access isn't **Anyone**, or you used a school account |
 | A Vercel login page appears | You opened a preview link. Use the main `<project>.vercel.app` address |
 | Researcher code says "not set" | Add `RESEARCHER_CODE`, then redeploy |
+| Sending failed: "Not allowed to save" | The researcher code was changed. Tap **Lock**, unlock with the new code, then **Retry sending now** |
 | Market Data or Data Builder says the keys are missing | Add both Alpaca keys, then redeploy |
 | Device storage: Blocked | Turn off Private Browsing |
 

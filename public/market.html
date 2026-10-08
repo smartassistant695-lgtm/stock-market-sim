@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Market Data - Stock Chart Study</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="site">
+  <nav class="nav"><span class="nav-title">Stock Chart Study</span><a class="nav-tab" href="index.html">Home</a><a class="nav-tab" href="simulation.html">Simulation</a><a class="nav-tab" href="about.html">About Us</a><a class="nav-tab" href="market.html" aria-current="page">Market Data</a></nav>
+
+  <main class="market-main">
+    <div class="toolbar">
+      <form id="ticker-form" class="ticker-form" autocomplete="off">
+        <input id="ticker" class="ticker-input" type="text" value="AAPL" maxlength="10"
+               aria-label="Ticker symbol" placeholder="Ticker"
+               autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go">
+        <button class="btn btn-small" type="submit">Load</button>
+      </form>
+      <div class="segmented" role="group" aria-label="Candle timeframe">
+        <button type="button" data-tf="1m" aria-pressed="false">1m</button>
+        <button type="button" data-tf="5m" aria-pressed="true">5m</button>
+        <button type="button" data-tf="10m" aria-pressed="false">10m</button>
+        <button type="button" data-tf="1h" aria-pressed="false">1h</button>
+      </div>
+    </div>
+
+    <div class="status" aria-live="polite">
+      <span id="status-main"></span>
+      <span id="status-time"></span>
+    </div>
+
+    <div class="chart-wrap">
+      <div id="chart" class="chart"></div>
+      <div id="legend" class="legend" hidden>
+        <div class="legend-title"><span id="lg-symbol"></span> · <span id="lg-tf"></span></div>
+        <div class="legend-values">
+          <span><span class="lbl">O</span><span id="lg-o"></span></span>
+          <span><span class="lbl">H</span><span id="lg-h"></span></span>
+          <span><span class="lbl">L</span><span id="lg-l"></span></span>
+          <span><span class="lbl">C</span><span id="lg-c"></span></span>
+          <span id="lg-chg"></span>
+        </div>
+      </div>
+      <div id="chart-msg" class="chart-msg" hidden></div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    Charts by <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView Lightweight Charts™</a>, Copyright (c) 2025 TradingView, Inc.
+    Market data from <a href="https://alpaca.markets/" target="_blank" rel="noopener">Alpaca</a>.
+  </footer>
+
+  <script src="vendor/lightweight-charts/lightweight-charts.standalone.production.js"></script>
+  <script src="js/market.js"></script>
+</body>
+</html>

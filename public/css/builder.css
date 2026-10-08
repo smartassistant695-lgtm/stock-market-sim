@@ -1,0 +1,110 @@
+/* Data Builder page (researcher only). Uses the shared tokens from style.css. */
+
+.builder { max-width: 1200px; margin: 0 auto; padding: 16px 24px 32px; }
+
+.builder-head { margin-bottom: 14px; }
+.builder-head h1 { margin: 0 0 2px; font-size: 20px; font-weight: 600; }
+.builder-head p { margin: 0; }
+
+/* Settings on the left, results on the right; stacked on narrow screens. */
+.builder-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.builder-results { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+@media (max-width: 860px) {
+  .builder-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---- Form ---- */
+.builder-form { margin: 0; }
+.builder-form > .field { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.field label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+/* Symbol and date fields: label on the left, input on the right. */
+.field-list { padding: 8px 0 0; }
+.field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 14px;
+}
+.field-row label { color: var(--muted); font-size: 14px; white-space: nowrap; }
+.field-row .input { flex: 0 1 140px; min-width: 0; }
+.field-note { margin: 8px 14px 12px; }
+
+.input {
+  width: 100%;
+  height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px; /* 16px or more stops iPad Safari from zooming in on focus */
+  font-variant-numeric: tabular-nums;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.input:focus { outline: none; border-color: var(--button); }
+.input-symbol { font-weight: 600; text-transform: uppercase; }
+input[type="date"].input { display: block; min-width: 0; padding: 0 6px; line-height: 42px; }
+input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
+
+.builder-actions { display: flex; flex-direction: column; gap: 8px; }
+.builder-actions .btn { width: 100%; }
+
+.status-line { margin: 0; padding: 0 14px 12px; font-size: 14px; }
+.status-line:empty { display: none; }
+
+/* ---- Results ---- */
+.panel-text { margin: 0; padding: 10px 14px; }
+
+.table-wrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th,
+.table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+.table th { color: var(--muted); font-size: 12px; font-weight: 600; }
+.table th:first-child,
+.table td:first-child { padding-left: 14px; }
+.table th:last-child,
+.table td:last-child { padding-right: 14px; }
+.table .r { text-align: right; }
+.table .sub { color: var(--muted); }
+.table .name { display: block; color: var(--muted); font-size: 12px; } /* fictional name under the ticker */
+.table tr.practice td { background: var(--panel); }
+
+.warnings { border-bottom: 1px solid var(--border); }
+.warnings h3 {
+  margin: 0;
+  padding: 10px 14px 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.warnings ul { margin: 0; padding: 6px 14px 10px 32px; }
+.warnings li { margin: 4px 0; }
+
+#report .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; border-top: 0; }
+
+.steps { margin: 0; padding: 12px 14px 12px 34px; }
+.steps li { margin: 0 0 6px; }
+.steps li:last-child { margin-bottom: 0; }
+
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92em; }
+
+@media (max-width: 640px) {
+  .builder { padding-left: 16px; padding-right: 16px; }
+}

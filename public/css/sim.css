@@ -1,0 +1,302 @@
+/* Simulation page (experiment). Flat colors, 1px borders, compact layout like a trading platform. */
+
+:root {
+  --warn-bg: #fdecee;
+  --warn-text: #8e1520;
+}
+
+/* ---------- Shared pieces ---------- */
+
+.sim-page { max-width: 720px; margin: 24px auto; padding: 0 16px; }
+.sim-page .panel + .panel,
+.sim-page .warn-box + .panel,
+.sim-page .panel + .warn-box { margin-top: 16px; }
+.sim-page-wide { max-width: 1040px; }
+.panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.panel-col > .panel + .panel { margin-top: 16px; }
+@media (max-width: 760px) { .panel-grid { grid-template-columns: 1fr; } }
+.sim-h1 { margin: 0 0 12px; font-size: 22px; font-weight: 600; }
+.sim-page > .note { margin: 0 0 16px; }
+
+.btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.actions.btn-row { margin-top: 0; }
+
+.text-input {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius);
+  background: #ffffff;
+  color: var(--text);
+  font: inherit;
+  font-size: 18px; /* 16px or more stops iPad Safari zooming in */
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.text-input:focus { outline: none; border-color: var(--text); }
+
+.select {
+  min-height: 44px;
+  min-width: 220px;
+  padding: 0 10px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius);
+  background: #ffffff;
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+}
+
+.field-label { display: block; margin-bottom: 8px; }
+.form-body { display: flex; gap: 10px; padding: 14px; }
+.form-msg { min-height: 1.4em; margin: 8px 0 0; }
+.panel .form-msg { margin: 0; padding: 0 14px 12px; }
+.panel .form-msg:empty { display: none; }
+.panel .row { align-items: center; }
+.panel .row .label { white-space: nowrap; }
+.panel .row > span:last-child { text-align: right; }
+
+.panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.panel-head .sim-h1 { margin: 0; }
+
+/* Red warning box (researcher screens only). */
+.warn-box {
+  padding: 12px 14px;
+  border: 1px solid var(--down);
+  border-radius: var(--radius);
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  margin-bottom: 16px;
+}
+.warn-box p { margin: 0 0 8px; }
+.warn-box p:last-child { margin-bottom: 0; }
+.warn-box .btn { margin-top: 4px; }
+
+/* ---------- Participant screens ---------- */
+
+.screen-center {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.screen-top { align-items: flex-start; padding-top: 12vh; } /* room for the on-screen keyboard */
+.card {
+  width: 100%;
+  max-width: 520px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #ffffff;
+}
+.card-wide { max-width: 720px; }
+.card p { margin: 0 0 12px; }
+.card .sim-h1 { margin-bottom: 16px; }
+
+/* Long text (consent) scrolls inside its box; the page itself never scrolls.
+   The card never grows taller than the screen, so its buttons stay visible. */
+.screen-center > .card { max-height: 100%; display: flex; flex-direction: column; }
+.screen-center > .card > * { flex: 0 0 auto; }
+.screen-center > .card > .text-scroll { flex: 0 1 auto; min-height: 0; }
+.text-scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+.steps { margin: 0; padding-left: 20px; }
+.steps li { margin-bottom: 8px; }
+
+/* ---------- Trade screen ---------- */
+
+.trade { display: flex; height: 100%; }
+
+.chart-wrap { position: relative; flex: 1; min-width: 0; }
+.chart { position: absolute; inset: 0; }
+.chart-label {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  z-index: 3;
+  padding: 2px 6px;
+  background: #ffffff;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.side {
+  flex: 0 0 300px;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+}
+.side > div { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.side > .side-entry { border-bottom: 0; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+
+.side-stock { display: flex; align-items: baseline; gap: 8px; }
+.t-ticker { font-weight: 700; font-size: 16px; }
+.t-name { color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.side-price { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.t-price { font-size: 28px; font-weight: 600; line-height: 1.2; }
+.t-change { font-size: 14px; color: var(--muted); }
+.t-change.up { color: var(--up); }
+.t-change.down { color: var(--down); }
+
+.kv { display: flex; justify-content: space-between; line-height: 1.6; }
+.kv .label { color: var(--muted); }
+
+.t-status { font-weight: 600; }
+.side > .t-status { padding-top: 8px; padding-bottom: 8px; }
+
+.entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius);
+}
+.entry .label { color: var(--muted); }
+.entry-value { font-size: 22px; font-weight: 600; }
+.t-max { color: var(--muted); font-size: 13px; }
+
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.key {
+  min-height: 48px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius);
+  background: #ffffff;
+  color: var(--text);
+  font: inherit;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.key-word { font-size: 15px; }
+.key:active { background: var(--panel); }
+.key:disabled { color: #b2b5be; background: #ffffff; }
+
+.trade-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.trade-btn { min-width: 0; width: 100%; min-height: 48px; font-size: 16px; }
+.trade-hold { display: block; }
+
+.t-msg { min-height: 2.6em; font-size: 13px; color: var(--down); line-height: 1.3; }
+.t-msg.info { color: var(--muted); }
+
+/* Smaller screens (for example a 10.2" iPad with Safari's bars showing). */
+@media (max-height: 760px) {
+  .side > div { padding: 7px 12px; }
+  .side > .side-entry { gap: 6px; }
+  .t-price { font-size: 24px; }
+  .kv { line-height: 1.45; }
+  .keypad { gap: 4px; }
+  .key, .trade-btn, .entry { min-height: 44px; }
+  .entry-value { font-size: 20px; }
+  .t-msg { min-height: 2.4em; }
+}
+
+/* ---------- Rating ---------- */
+
+.rating { margin-top: 20px; }
+.rating-buttons { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.rating-btn {
+  min-height: 64px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius);
+  background: #ffffff;
+  color: var(--text);
+  font: inherit;
+  font-size: 24px;
+  font-weight: 600;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.rating-btn[aria-pressed="true"] { background: var(--button); border-color: var(--button); color: #ffffff; }
+.rating-ends { display: flex; justify-content: space-between; margin-top: 8px; color: var(--muted); font-size: 14px; }
+
+/* ---------- Overlays ---------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+}
+/* The exit code prompt sits high, so the on-screen keyboard does not cover its buttons. */
+.overlay.screen-top { align-items: flex-start; padding-top: 12vh; }
+
+/* Invisible press-and-hold area for the researcher (only during a session). */
+.exit-zone {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 64px;
+  height: 64px;
+  z-index: 50;
+  background: transparent;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+body.in-session .exit-zone { display: block; }
+
+.rotate-overlay { display: none; }
+@media (orientation: portrait) {
+  .rotate-overlay {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: var(--bg);
+    font-size: 20px;
+    text-align: center;
+  }
+}
+
+/* ---------- Session lockdown ---------- */
+/* While a participant is in the session: no navigation, scrolling, zooming,
+   text selection or long-press menus. */
+
+html.in-session { height: 100%; overflow: hidden; overscroll-behavior: none; }
+body.in-session {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+body.in-session .nav,
+body.in-session .site-footer { display: none; }
+body.in-session #app { height: 100%; }
+body.in-session .screen { height: 100%; }
+body.in-session button { touch-action: manipulation; }
+body.in-session .text-input { -webkit-user-select: text; user-select: text; }

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data Builder</title>
+  <link rel="icon" href="data:,">
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/builder.css">
+</head>
+<body class="site">
+  <nav class="nav"><span class="nav-title">Stock Chart Study</span><a class="nav-tab" href="index.html">Home</a><a class="nav-tab" href="simulation.html">Simulation</a><a class="nav-tab" href="about.html">About Us</a><a class="nav-tab" href="market.html">Market Data</a></nav>
+
+  <!-- Researcher only (not linked in the menu). Builds public/data/stocks.json
+       from real 1-minute Alpaca prices. See README.md, "Step 3". -->
+  <main class="builder">
+    <div class="builder-head">
+      <h1>Data Builder</h1>
+      <p class="note">Researcher only. Downloads 3 trading days of real 1-minute prices from Alpaca and makes the experiment's data file, <span class="mono">stocks.json</span>.</p>
+    </div>
+
+    <div class="builder-grid">
+      <!-- Left column: settings -->
+      <form id="form" class="panel builder-form" autocomplete="off" novalidate>
+        <h2>Settings</h2>
+        <div class="field">
+          <label for="code">Researcher code</label>
+          <input id="code" class="input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
+        </div>
+
+        <div class="field-list">
+          <div class="field-row">
+            <label for="sym-A">Stock A (lowest volatility)</label>
+            <input id="sym-A" class="input input-symbol" value="KO" maxlength="10" autocapitalize="characters" autocorrect="off" spellcheck="false">
+          </div>
+          <div class="field-row">
+            <label for="sym-B">Stock B</label>
+            <input id="sym-B" class="input input-symbol" value="MSFT" maxlength="10" autocapitalize="characters" autocorrect="off" spellcheck="false">
+          </div>
+          <div class="field-row">
+            <label for="sym-C">Stock C</label>
+            <input id="sym-C" class="input input-symbol" value="TSLA" maxlength="10" autocapitalize="characters" autocorrect="off" spellcheck="false">
+          </div>
+          <div class="field-row">
+            <label for="sym-D">Stock D (highest volatility)</label>
+            <input id="sym-D" class="input input-symbol" value="COIN" maxlength="10" autocapitalize="characters" autocorrect="off" spellcheck="false">
+          </div>
+          <div class="field-row">
+            <label for="sym-P">Practice stock</label>
+            <input id="sym-P" class="input input-symbol" value="AAPL" maxlength="10" autocapitalize="characters" autocorrect="off" spellcheck="false">
+          </div>
+          <div class="field-row">
+            <label for="end-date">End date (optional)</label>
+            <input id="end-date" class="input input-date" type="date">
+          </div>
+        </div>
+        <p class="note field-note">The file uses the last 3 back-to-back full trading days on or before the end date. Leave it blank for the most recent days.</p>
+
+        <div class="actions builder-actions">
+          <button id="build" class="btn" type="submit">Build data file</button>
+          <button id="probe" class="btn btn-secondary" type="button">Check 1-minute history</button>
+        </div>
+        <p id="status" class="status-line" role="status" aria-live="polite"></p>
+      </form>
+
+      <!-- Right column: results and upload steps -->
+      <div class="builder-results">
+        <section id="probe-panel" class="panel" hidden>
+          <h2>1-minute history</h2>
+          <p id="probe-summary" class="panel-text"></p>
+          <table class="table num">
+            <thead><tr><th>Date</th><th>Feed</th><th class="r">1-minute bars at 14:00 (up to 5)</th></tr></thead>
+            <tbody id="probe-rows"></tbody>
+          </table>
+        </section>
+
+        <section class="panel">
+          <h2>Report</h2>
+          <p id="report-empty" class="panel-text note">Build the data file to see the report here.</p>
+          <div id="report" hidden>
+            <div class="row"><span class="label">Trading days</span><span id="r-dates" class="num"></span></div>
+            <div class="row"><span class="label">Data feed</span><span id="r-feed"></span></div>
+            <div class="table-wrap">
+              <table class="table num">
+                <thead>
+                  <tr>
+                    <th>Slot</th><th>Shown as</th><th>Real stock</th>
+                    <th class="r">Volatility</th><th class="r">Change days 2-3</th><th class="r">Filled minutes</th>
+                  </tr>
+                </thead>
+                <tbody id="report-rows"></tbody>
+              </table>
+            </div>
+            <p class="note panel-text">Volatility is the standard deviation of 1-minute returns, in percent. Filled minutes had no trades and are shown as flat candles.</p>
+            <div id="warnings"></div>
+            <div class="actions">
+              <button id="download" class="btn" type="button">Download stocks.json</button>
+              <span id="file-size" class="note num"></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Put the file on the website</h2>
+          <ol class="steps">
+            <li>Tap <b>Download stocks.json</b>. On an iPad the file goes to the Files app, in Downloads. If it is named <span class="mono">stocks (1).json</span>, rename it to <span class="mono">stocks.json</span>.</li>
+            <li>Open this project's repository on github.com and sign in.</li>
+            <li>Open the <span class="mono">public</span> folder, then the <span class="mono">data</span> folder.</li>
+            <li>Click <b>Add file</b> &gt; <b>Upload files</b>.</li>
+            <li>Choose <span class="mono">stocks.json</span>. It replaces the old file.</li>
+            <li>Click <b>Commit changes</b>.</li>
+            <li>Vercel puts the new file online automatically in about a minute. Then the "Placeholder data" warning on the researcher screen disappears.</li>
+          </ol>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    Charts by <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView Lightweight Charts™</a>, Copyright (c) 2025 TradingView, Inc.
+    Market data from <a href="https://alpaca.markets/" target="_blank" rel="noopener">Alpaca</a>.
+  </footer>
+
+  <script src="js/builder.js"></script>
+</body>
+</html>

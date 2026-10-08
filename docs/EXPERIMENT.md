@@ -138,6 +138,9 @@ From step 3 on, the navigation tabs are hidden. The hidden researcher exit is a
 All rows go to Google Sheets through `POST /api/save` with body
 `{ batchId, sheets: { SheetName: [rowObject, ...], ... } }`, and to a local
 backup on the device. Each stock's data is sent right after its rating.
+The request carries the header `x-researcher-hash` (the stored
+`researcherHash`); the server refuses experiment data without it, so only
+unlocked iPads can add rows. Only the `Test` tab (Stage 0 test page) is open.
 
 **Actions** (one row per decision and one per rating):
 `participant_id, version, session_id, position, stock, stock_slot, timeframe,
@@ -170,3 +173,7 @@ final_pct_in_stock, return_pct, trades, timestamp`.
 - State is saved to localStorage after every step. After a refresh or a closed
   tab, the researcher can resume the participant from the start of the current
   segment or decision.
+- Going back (Back button or a swipe from the left edge) during a session
+  stays on the page. For the strongest lockdown, run sessions in Guided Access
+  (Settings > Accessibility > Guided Access) or from a Home Screen icon
+  (Share > Add to Home Screen): then there is no address bar and no back swipe.

@@ -4,13 +4,36 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Stock Chart Study</title>
+  <link rel="icon" href="data:,">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-  <div class="topbar">Stock Chart Study</div>
-  <div class="page">
-    <p>The full site is being built in stages.</p>
-    <p><a class="btn" href="test.html" style="line-height:48px;text-decoration:none">Open connection test</a></p>
-  </div>
+<body class="site">
+  <nav class="nav"><span class="nav-title">Stock Chart Study</span><a class="nav-tab" href="index.html" aria-current="page">Home</a><a class="nav-tab" href="simulation.html">Simulation</a><a class="nav-tab" href="about.html">About Us</a><a class="nav-tab" href="market.html">Market Data</a></nav>
+
+  <main class="wrap">
+    <figure class="photo">
+      <!-- The photo file goes in public/images/ (see public/images/README.txt).
+           If the file is missing, the grey box below is shown instead. -->
+      <img src="images/charging-bull.jpg" width="2400" height="1050"
+           alt="The Charging Bull statue near Wall Street, New York"
+           onerror="this.hidden = true; this.nextElementSibling.hidden = false;">
+      <div class="photo-missing" hidden>Add your licensed photo here: public/images/charging-bull.jpg</div>
+      <!-- EDIT PHOTO CREDIT -->
+      <figcaption class="photo-credit">Photo: [Photographer name], [license]</figcaption>
+    </figure>
+
+    <div class="intro">
+      <div>
+        <!-- EDIT PROJECT TITLE -->
+        <h1>Chart Timeframes and Trading Decisions</h1>
+        <p>A short experiment on whether the time span of each candle on a stock chart changes how people trade and how volatile a stock feels.</p>
+      </div>
+      <a class="btn" href="simulation.html">Start the simulation</a>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    Charts by <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView Lightweight Charts™</a>, Copyright (c) 2025 TradingView, Inc.
+  </footer>
 </body>
 </html>

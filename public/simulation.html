@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- No zooming: the experiment runs on an iPad in landscape. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <title>Simulation - Stock Chart Study</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/sim.css">
+</head>
+<body class="site">
+  <nav class="nav"><span class="nav-title">Stock Chart Study</span><a class="nav-tab" href="index.html">Home</a><a class="nav-tab" href="simulation.html" aria-current="page">Simulation</a><a class="nav-tab" href="about.html">About Us</a><a class="nav-tab" href="market.html">Market Data</a></nav>
+
+  <main id="app">
+
+    <!-- ============ Researcher screens (navigation visible) ============ -->
+
+    <!-- Researcher code gate -->
+    <section id="screen-gate" class="screen" hidden>
+      <div class="sim-page">
+        <h1 class="sim-h1">Simulation</h1>
+        <p class="note">For the researcher. Enter the researcher code to open the session controls.</p>
+        <div id="gate-data-error" class="warn-box" hidden></div>
+        <form id="gate-form" class="panel" autocomplete="off">
+          <h2>Researcher code</h2>
+          <div class="form-body">
+            <input id="gate-code" class="text-input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Researcher code">
+            <button id="gate-submit" class="btn" type="submit">Unlock</button>
+          </div>
+          <p id="gate-msg" class="form-msg bad" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- Researcher panel -->
+    <section id="screen-panel" class="screen" hidden>
+      <div class="sim-page sim-page-wide">
+        <div class="panel-head">
+          <h1 class="sim-h1">Session controls</h1>
+          <button id="panel-lock" class="btn btn-secondary" type="button">Lock</button>
+        </div>
+
+        <div id="panel-data-warning" class="warn-box" hidden></div>
+        <div id="panel-storage-warning" class="warn-box" hidden></div>
+        <div id="panel-send-warning" class="warn-box" hidden>
+          <p><strong>Sending to Google Sheets failed.</strong> The data is still saved on this iPad and will be sent again automatically.</p>
+          <p>Error: <span id="panel-send-error"></span></p>
+          <button id="panel-retry" class="btn" type="button">Retry sending now</button>
+        </div>
+
+        <div class="panel-grid">
+          <div class="panel-col">
+            <div class="panel">
+              <h2>Session</h2>
+              <div class="row">
+                <label class="label" for="panel-version-mode">Version</label>
+                <select id="panel-version-mode" class="select">
+                  <option value="auto">Auto (rotates 1 to 4)</option>
+                  <option value="1">Version 1</option>
+                  <option value="2">Version 2</option>
+                  <option value="3">Version 3</option>
+                  <option value="4">Version 4</option>
+                </select>
+              </div>
+              <div class="row"><span class="label">Next session uses</span><span id="panel-next-version" class="num"></span></div>
+              <div class="row"><span class="label">Completed on this iPad</span><span id="panel-counts" class="num"></span></div>
+              <div id="panel-inprogress-row" class="row" hidden><span class="label">In progress</span><span id="panel-inprogress" class="num"></span></div>
+              <div class="actions btn-row">
+                <button id="panel-start" class="btn" type="button">Start new session</button>
+                <button id="panel-resume" class="btn" type="button" hidden>Resume session</button>
+                <button id="panel-end" class="btn btn-secondary" type="button" hidden>End session</button>
+              </div>
+              <p id="panel-session-msg" class="form-msg note"></p>
+            </div>
+          </div>
+          <div class="panel-col">
+            <div class="panel">
+              <h2>Data file</h2>
+              <div class="row"><span class="label">Status</span><span id="panel-data-status">Loading...</span></div>
+              <div class="row"><span class="label">Stocks</span><span id="panel-data-stocks"></span></div>
+              <div class="row"><span class="label">Trading days</span><span id="panel-data-dates" class="num"></span></div>
+              <div class="row"><span class="label">Created</span><span id="panel-data-generated" class="num"></span></div>
+            </div>
+
+            <div class="panel">
+              <h2>Saved data</h2>
+              <div class="row"><span class="label">Waiting to send</span><span id="panel-pending" class="num"></span></div>
+              <div class="row"><span class="label">Rows saved on this iPad</span><span id="panel-backup" class="num"></span></div>
+              <div class="actions btn-row">
+                <button class="btn btn-secondary" type="button" data-download="Actions">Actions CSV</button>
+                <button class="btn btn-secondary" type="button" data-download="Summary">Summary CSV</button>
+                <button class="btn btn-secondary" type="button" data-download="Sessions">Sessions CSV</button>
+              </div>
+              <p class="note form-msg">CSV files are copies of everything saved on this iPad. Google Sheets is the main copy.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Participant screens (navigation hidden) ============ -->
+
+    <!-- Session paused (after a refresh or closed tab) -->
+    <section id="screen-paused" class="screen screen-center screen-top" hidden>
+      <div class="card">
+        <h1 class="sim-h1">Session paused</h1>
+        <p>Please wait for the researcher.</p>
+        <form id="paused-form" autocomplete="off">
+          <label class="field-label" for="paused-code">Researcher code</label>
+          <input id="paused-code" class="text-input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <div class="btn-row">
+            <button id="paused-resume" class="btn" type="submit">Resume</button>
+            <button id="paused-end" class="btn btn-secondary" type="button">End session</button>
+          </div>
+          <p id="paused-msg" class="form-msg bad" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- Consent -->
+    <section id="screen-consent" class="screen screen-center" hidden>
+      <div class="card card-wide">
+        <h1 class="sim-h1">Consent to take part</h1>
+        <div class="text-scroll">
+          <!-- EDIT CONSENT TEXT BELOW -->
+          <p>[Placeholder consent text. Replace this with your approved consent form.]</p>
+          <p>This study is about how people read stock charts. You will trade four made-up stocks with
+            virtual money. No real money is used and nothing you do here affects you outside the study.</p>
+          <p>It takes about 10 minutes. You can stop at any time by telling the researcher.</p>
+          <p>Your answers are saved with a participant number, not your name.</p>
+          <!-- EDIT CONSENT TEXT ABOVE -->
+        </div>
+        <div class="btn-row">
+          <button id="consent-yes" class="btn" type="button">I agree</button>
+          <button id="consent-no" class="btn btn-secondary" type="button">I do not agree</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Consent declined -->
+    <section id="screen-declined" class="screen screen-center" hidden>
+      <div class="card">
+        <h1 class="sim-h1">Thank you</h1>
+        <p>You chose not to take part. Please hand the iPad back to the researcher.</p>
+      </div>
+    </section>
+
+    <!-- Participant ID -->
+    <section id="screen-pid" class="screen screen-center screen-top" hidden>
+      <div class="card">
+        <h1 class="sim-h1">Participant number</h1>
+        <form id="pid-form" autocomplete="off">
+          <label class="field-label" for="pid-input">Enter the participant number the researcher gave you.</label>
+          <input id="pid-input" class="text-input" type="text" maxlength="20" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false">
+          <div class="btn-row">
+            <button class="btn" type="submit">Continue</button>
+          </div>
+          <p id="pid-msg" class="form-msg bad" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- Instructions -->
+    <section id="screen-instructions" class="screen screen-center" hidden>
+      <div class="card card-wide">
+        <h1 class="sim-h1">How it works</h1>
+        <div class="text-scroll">
+          <ul class="steps">
+            <li>You will trade one practice stock and then four stocks. The companies are made up.</li>
+            <li>For each stock you start with <span class="num" data-start-cash>$10,000</span> of virtual money and no shares.</li>
+            <li>The chart shows one day of price history. Then the price starts moving.</li>
+            <li>The chart stops several times. Each time, enter a number of shares on the keypad and tap
+              <strong>Buy</strong> or <strong>Sell</strong>, or tap <strong>Hold</strong> to do nothing.</li>
+            <li>After each stock you will answer one question about it.</li>
+            <li>Try to end with as much money as you can.</li>
+          </ul>
+        </div>
+        <div class="btn-row">
+          <button id="instructions-next" class="btn" type="button">Continue</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Before each stock -->
+    <section id="screen-intro" class="screen screen-center" hidden>
+      <div class="card">
+        <h1 id="intro-title" class="sim-h1"></h1>
+        <p id="intro-note"></p>
+        <div class="btn-row">
+          <button id="intro-start" class="btn" type="button">Start</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trading -->
+    <section id="screen-trade" class="screen" hidden>
+      <div class="trade">
+        <div class="chart-wrap">
+          <div id="chart" class="chart"></div>
+          <div id="chart-label" class="chart-label num"></div>
+        </div>
+        <aside class="side">
+          <div class="side-stock">
+            <span id="t-ticker" class="t-ticker"></span>
+            <span id="t-name" class="t-name"></span>
+          </div>
+          <div class="side-price">
+            <span id="t-price" class="t-price num"></span>
+            <span id="t-change" class="t-change num"></span>
+          </div>
+          <div class="side-account">
+            <div class="kv"><span class="label">Cash</span><span id="t-cash" class="num"></span></div>
+            <div class="kv"><span class="label">Shares held</span><span id="t-held" class="num"></span></div>
+            <div class="kv"><span class="label">Total value</span><span id="t-value" class="num"></span></div>
+          </div>
+          <div id="t-status" class="t-status"></div>
+          <div class="side-entry">
+            <div class="entry">
+              <span class="label">Shares</span>
+              <span id="t-entry" class="entry-value num"></span>
+            </div>
+            <div id="t-max" class="t-max num"></div>
+            <div class="keypad" id="keypad">
+              <button class="key" type="button" data-key="1">1</button>
+              <button class="key" type="button" data-key="2">2</button>
+              <button class="key" type="button" data-key="3">3</button>
+              <button class="key" type="button" data-key="4">4</button>
+              <button class="key" type="button" data-key="5">5</button>
+              <button class="key" type="button" data-key="6">6</button>
+              <button class="key" type="button" data-key="7">7</button>
+              <button class="key" type="button" data-key="8">8</button>
+              <button class="key" type="button" data-key="9">9</button>
+              <button class="key key-word" type="button" data-key="clear">Clear</button>
+              <button class="key" type="button" data-key="0">0</button>
+              <button class="key key-word" type="button" data-key="delete">Delete</button>
+            </div>
+            <div class="trade-buttons">
+              <button id="t-buy" class="btn trade-btn" type="button">Buy</button>
+              <button id="t-sell" class="btn trade-btn" type="button">Sell</button>
+            </div>
+            <button id="t-hold" class="btn btn-secondary trade-btn trade-hold" type="button">Hold</button>
+            <div id="t-msg" class="t-msg" aria-live="polite"></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Volatility rating -->
+    <section id="screen-rating" class="screen screen-center" hidden>
+      <div class="card card-wide">
+        <p id="rating-stock" class="note"></p>
+        <h1 class="sim-h1">How volatile did this stock feel?</h1>
+        <div class="rating">
+          <div class="rating-buttons" id="rating-buttons">
+            <button class="rating-btn num" type="button" data-rating="1">1</button>
+            <button class="rating-btn num" type="button" data-rating="2">2</button>
+            <button class="rating-btn num" type="button" data-rating="3">3</button>
+            <button class="rating-btn num" type="button" data-rating="4">4</button>
+            <button class="rating-btn num" type="button" data-rating="5">5</button>
+            <button class="rating-btn num" type="button" data-rating="6">6</button>
+            <button class="rating-btn num" type="button" data-rating="7">7</button>
+          </div>
+          <div class="rating-ends">
+            <span>1 = Very stable</span>
+            <span>7 = Very volatile</span>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button id="rating-next" class="btn" type="button" disabled>Continue</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Thank you -->
+    <section id="screen-thanks" class="screen screen-center" hidden>
+      <div class="card">
+        <h1 class="sim-h1">Thank you</h1>
+        <p>You have finished the study. Please hand the iPad back to the researcher.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Hidden researcher exit: press and hold the top-left corner for 3 seconds. -->
+  <div id="exit-zone" class="exit-zone" aria-hidden="true"></div>
+  <div id="exit-prompt" class="overlay screen-top" hidden>
+    <form id="exit-form" class="card" autocomplete="off">
+      <label class="field-label" for="exit-code">Researcher code</label>
+      <input id="exit-code" class="text-input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div class="btn-row">
+        <button class="btn" type="submit">Exit to controls</button>
+        <button id="exit-cancel" class="btn btn-secondary" type="button">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Shown by CSS when the iPad is held upright. -->
+  <div id="rotate" class="rotate-overlay"><p>Please rotate your iPad to landscape.</p></div>
+
+  <footer class="site-footer">Charts by <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView Lightweight Charts™</a>, Copyright (c) 2025 TradingView, Inc.</footer>
+
+  <script src="vendor/lightweight-charts/lightweight-charts.standalone.production.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/sim-chart.js"></script>
+  <script src="js/experiment.js"></script>
+</body>
+</html>

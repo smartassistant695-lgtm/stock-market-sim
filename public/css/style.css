@@ -9,6 +9,7 @@
   --down: #f23645;    /* red: price down */
   --button: #3d4652;  /* the one muted color for primary buttons */
   --button-press: #2b323b;
+  --control-border: #d1d4dc; /* inputs, keypad keys and secondary buttons: a little darker than panel borders */
   --radius: 3px;
 }
 
@@ -83,5 +84,234 @@ html, body {
 .btn:disabled { opacity: 0.5; }
 
 .actions { padding: 14px; border-top: 1px solid var(--border); }
+.row + .actions { border-top: 0; } /* the row above already draws the line */
 .note { color: var(--muted); font-size: 13px; }
 a { color: var(--text); }
+
+/* Make the "hidden" attribute win over display rules set below. */
+[hidden] { display: none !important; }
+
+/* Links styled as buttons (for example "Start the simulation"). */
+a.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+/* Secondary button: white with a 1px border (the same on every page). */
+.btn-secondary {
+  background: var(--bg);
+  border-color: var(--control-border);
+  color: var(--text);
+}
+.btn-secondary:active { background: var(--panel); }
+
+/* ---- Site layout: navigation bar on top, footer at the bottom ---- */
+
+body.site {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+body.site > main { flex: 1 0 auto; width: 100%; }
+
+.nav {
+  display: flex;
+  align-items: stretch;
+  height: 48px;
+  padding: 0 8px 0 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  white-space: nowrap;
+  overflow-x: auto;          /* very narrow screens: tabs scroll instead of breaking */
+  scrollbar-width: none;
+}
+.nav::-webkit-scrollbar { display: none; }
+.nav-title {
+  display: flex;
+  align-items: center;
+  margin-right: 20px;
+  font-weight: 600;
+}
+.nav-tab {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  text-decoration: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-tab[aria-current="page"] {
+  border-bottom-color: var(--text);
+  color: var(--text);
+  font-weight: 600;
+}
+@media (hover: hover) {
+  .nav-tab:hover { color: var(--text); }
+}
+
+.site-footer {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+}
+.site-footer a { color: var(--muted); }
+
+/* ---- Home page ---- */
+
+.wrap { max-width: 1200px; margin: 0 auto; padding: 20px 24px 32px; }
+
+.photo { margin: 0; }
+.photo img,
+.photo-missing {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+.photo img { height: auto; object-fit: cover; }
+.photo-missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: #eceef2;
+  color: var(--muted);
+  text-align: center;
+}
+.photo-credit { margin-top: 6px; color: var(--muted); font-size: 12px; }
+
+.intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 32px;
+  margin-top: 20px;
+}
+.intro h1 { margin: 0 0 4px; font-size: 26px; font-weight: 600; line-height: 1.25; }
+.intro p { margin: 0; max-width: 620px; color: var(--muted); }
+
+/* ---- About Us page ---- */
+
+.prose { max-width: 720px; margin: 0 auto; padding: 24px 24px 40px; }
+.prose h1 { margin: 0 0 16px; font-size: 24px; font-weight: 600; }
+.prose h2 { margin: 24px 0 6px; font-size: 16px; font-weight: 600; }
+.prose p { margin: 0 0 10px; }
+.credits {
+  margin-top: 32px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 14px;
+}
+.credits h2 { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.03em; }
+
+/* ---- Market Data page ---- */
+
+.market-main { display: flex; flex-direction: column; }
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.ticker-form { display: flex; gap: 8px; margin: 0; }
+.ticker-input {
+  width: 120px;
+  height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;           /* 16px or more stops iPad Safari from zooming in on focus */
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.ticker-input:focus { outline: none; border-color: var(--button); }
+.btn-small { min-height: 44px; min-width: 0; padding: 0 18px; }
+
+/* Segmented timeframe buttons: one bordered group, active one filled. */
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.segmented button {
+  min-width: 52px;
+  height: 44px;                /* tap target: at least 44px */
+  padding: 0 12px;
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.segmented button:first-child { border-left: 0; }
+.segmented button[aria-pressed="true"] { background: var(--button); color: #ffffff; font-weight: 600; }
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 16px;
+  min-height: 29px;
+  padding: 5px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-wrap { position: relative; flex: 1 1 auto; min-height: 280px; }
+.chart { position: absolute; inset: 0; }
+.chart-msg {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  color: var(--muted);
+  text-align: center;
+  pointer-events: none;
+}
+.legend {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  right: 72px;               /* wrap before reaching the price scale */
+  z-index: 3;
+  font-size: 13px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;      /* touches go through to the chart */
+}
+.legend-title { font-size: 15px; font-weight: 600; }
+.legend-values > span { display: inline-block; margin-right: 10px; white-space: nowrap; }
+.legend-values .lbl { margin-right: 3px; color: var(--muted); }
+
+/* Phones and narrow windows */
+@media (max-width: 640px) {
+  .nav { padding-left: 4px; }
+  .nav-title { display: none; }
+  .wrap, .prose { padding-left: 16px; padding-right: 16px; }
+  .intro h1 { font-size: 22px; }
+}
