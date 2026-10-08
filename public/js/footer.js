@@ -14,8 +14,8 @@
   const FOOTER = {
     names: 'Noah and Jojo',          // {names}
     shortName: 'Noah & Jojo',        // first item of the "Noah & Jojo › Page" row
-    school: '[School name]',         // {school}
-    email: '[your email]',           // becomes a link once it contains an @
+    school: '[John L. Miller Great Neck North Highschool]',         // {school}
+    email: '[skaya1@student.gn.k12.ny.us or Johebshalom5@student.gn.k12.ny.us]',           // becomes a link once it contains an @
     year: '2026',                    // {year}
     photographer: 'Jamal Eid / NYSE', // {photographer}: also edit the credit in index.html
     photoLink: '#',                  // {photoLink}: the web page of the photo (# = no link yet)
