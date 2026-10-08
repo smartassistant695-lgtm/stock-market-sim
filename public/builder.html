@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="css/builder.css">
 </head>
 <body class="site">
-  <nav class="nav"><span class="nav-title">Stock Chart Study</span><a class="nav-tab" href="index.html">Home</a><a class="nav-tab" href="simulation.html">Simulation</a><a class="nav-tab" href="about.html">About Us</a><a class="nav-tab" href="market.html">Market Data</a></nav>
+  <nav class="nav"><span class="nav-title">Noah &amp; Jojo</span><a class="nav-tab" href="index.html">Home</a><a class="nav-tab" href="simulation.html">Simulation</a><a class="nav-tab" href="about.html">About Us</a><a class="nav-tab" href="market.html">Market Data</a><a class="nav-tab" href="contact.html">Contact Us</a></nav>
 
   <!-- Researcher only (not linked in the menu). Builds public/data/stocks.json
        from real 1-minute Alpaca prices. See README.md, "Step 3". -->
@@ -110,18 +110,16 @@
             <li>Click <b>Add file</b> &gt; <b>Upload files</b>.</li>
             <li>Choose <span class="mono">stocks.json</span>. It replaces the old file.</li>
             <li>Click <b>Commit changes</b>.</li>
-            <li>Vercel puts the new file online automatically in about a minute. Then the "Placeholder data" warning on the researcher screen disappears.</li>
+            <li>Vercel puts the new file online automatically in about a minute. Then the "Placeholder data" warning on the Researcher page disappears.</li>
           </ol>
         </section>
       </div>
     </div>
   </main>
 
-  <footer class="site-footer">
-    Charts by <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView Lightweight Charts™</a>, Copyright (c) 2025 TradingView, Inc.
-    Market data from <a href="https://alpaca.markets/" target="_blank" rel="noopener">Alpaca</a>.
-  </footer>
-
   <script src="js/builder.js"></script>
+
+  <footer id="site-footer" data-page="Data Builder"></footer>
+  <script src="js/footer.js"></script>
 </body>
 </html>

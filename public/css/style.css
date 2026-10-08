@@ -1,5 +1,42 @@
-/* Shared styles. Flat colors, 1px borders, small radius, system fonts. */
+/* Shared styles for every page.
+   Two parts:
+   1. The experiment and researcher pieces (.btn, .panel, .row ...). Flat colors, 1px
+      borders, small radius, system fonts. Do not change these: the trading screen uses them.
+   2. The public pages (navigation, footer, Home, About Us, Market Data): quiet black,
+      greys and white, a serif for headings, no shadows and no gradients. */
+
+/* ---- Typeface for headings (self-hosted, see fonts/cormorant-garamond/LICENSE) ---- */
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("../fonts/cormorant-garamond/cormorant-garamond-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("../fonts/cormorant-garamond/cormorant-garamond-latin-500-normal.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("../fonts/cormorant-garamond/cormorant-garamond-latin-500-italic.woff2") format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("../fonts/cormorant-garamond/cormorant-garamond-latin-600-normal.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
+  /* Experiment colors (TradingView style). Keep these values. */
   --bg: #ffffff;
   --panel: #f8f9fb;
   --border: #e0e3eb;
@@ -11,6 +48,22 @@
   --button-press: #2b323b;
   --control-border: #d1d4dc; /* inputs, keypad keys and secondary buttons: a little darker than panel borders */
   --radius: 3px;
+
+  /* Public pages: ink, greys, hairlines and paper. No accent color. */
+  --ink: #1d1d1f;       /* headings, main text, solid buttons */
+  --ink-2: #424245;     /* links, secondary text */
+  --ink-3: #6e6e73;     /* quiet text */
+  --ink-4: #86868b;     /* quietest text */
+  --hairline: #d2d2d7;  /* 1px lines */
+  --paper: #f5f5f7;     /* light grey background (footer) */
+  --serif: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  /* Page width: content is at most 980px wide, with this much space at the sides. */
+  --site-width: 980px;
+  --gutter: 22px;
+  /* Left and right padding that lines a full-width block up with the 980px column. */
+  --side: max(var(--gutter), calc((100% - var(--site-width)) / 2));
 }
 
 * { box-sizing: border-box; }
@@ -91,7 +144,7 @@ a { color: var(--text); }
 /* Make the "hidden" attribute win over display rules set below. */
 [hidden] { display: none !important; }
 
-/* Links styled as buttons (for example "Start the simulation"). */
+/* Links styled as buttons. */
 a.btn {
   display: inline-flex;
   align-items: center;
@@ -106,6 +159,10 @@ a.btn {
 }
 .btn-secondary:active { background: var(--panel); }
 
+/* ==================================================================
+   Public pages
+   ================================================================== */
+
 /* ---- Site layout: navigation bar on top, footer at the bottom ---- */
 
 body.site {
@@ -116,169 +173,338 @@ body.site {
 }
 body.site > main { flex: 1 0 auto; width: 100%; }
 
+/* ---- Navigation bar ---- */
+
 .nav {
   display: flex;
   align-items: stretch;
-  height: 48px;
-  padding: 0 8px 0 16px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
+  height: 52px;
+  padding: 0 var(--side);
+  border-bottom: 1px solid var(--hairline);
+  background: #ffffff;
+  font-family: var(--sans);
   white-space: nowrap;
   overflow-x: auto;          /* very narrow screens: tabs scroll instead of breaking */
   scrollbar-width: none;
+  -webkit-font-smoothing: antialiased;
 }
 .nav::-webkit-scrollbar { display: none; }
 .nav-title {
   display: flex;
   align-items: center;
-  margin-right: 20px;
-  font-weight: 600;
+  margin-right: auto;        /* pushes the tabs to the right */
+  padding-right: 24px;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 .nav-tab {
   display: flex;
   align-items: center;
   min-height: 44px;
-  padding: 0 12px;
-  border-bottom: 2px solid transparent;
-  color: var(--muted);
+  padding: 0 14px;
+  color: var(--ink-2);
+  font-size: 14px;
+  letter-spacing: -0.01em;
   text-decoration: none;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
+.nav-tab:last-child { margin-right: -14px; } /* the last word lines up with the page edge */
 .nav-tab[aria-current="page"] {
-  border-bottom-color: var(--text);
-  color: var(--text);
-  font-weight: 600;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 7px;
 }
 @media (hover: hover) {
-  .nav-tab:hover { color: var(--text); }
+  .nav-tab:hover { color: var(--ink); }
 }
 
-.site-footer {
-  padding: 10px 16px;
-  border-top: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 12px;
+/* Home page: the bar sits on the photo, with white text on a dark glass strip
+   (so it stays readable on a bright photo). */
+.nav-on-photo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  border-bottom-color: rgba(255, 255, 255, 0.22);
+  background: rgba(20, 20, 20, 0.5); /* used when the browser cannot blur */
 }
-.site-footer a { color: var(--muted); }
-
-/* ---- Home page ---- */
-
-.wrap { max-width: 1200px; margin: 0 auto; padding: 20px 24px 32px; }
-
-.photo { margin: 0; }
-.photo img,
-.photo-missing {
-  display: block;
-  width: 100%;
-  aspect-ratio: 16 / 7;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--panel);
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .nav-on-photo {
+    background: rgba(20, 20, 20, 0.36);
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
+    backdrop-filter: blur(12px) saturate(120%);
+  }
 }
-.photo img { height: auto; object-fit: cover; }
-.photo-missing {
-  display: flex;
+.nav-on-photo .nav-title,
+.nav-on-photo .nav-tab[aria-current="page"] { color: #ffffff; }
+.nav-on-photo .nav-tab { color: rgba(255, 255, 255, 0.9); }
+@media (hover: hover) {
+  .nav-on-photo .nav-tab:hover { color: #ffffff; }
+}
+
+/* Keyboard focus: a plain outline in the text color (never the browser's blue). */
+.nav a:focus-visible,
+.site-footer a:focus-visible,
+.site-btn:focus-visible,
+.segmented button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+/* Buttons with white text would get a white ring, so use ink (white on the photo). */
+.site-btn:focus-visible { outline-color: var(--ink); }
+.hero .site-btn:focus-visible { outline-color: #ffffff; }
+/* Inside the segmented group (which cuts off anything outside it), the ring is drawn inside the button. */
+.segmented button:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
+.segmented button[aria-pressed="true"]:focus-visible { outline-color: #ffffff; }
+
+/* ---- Buttons for the public pages ----
+   (.btn above is the experiment's button; these are separate so the trading screen never changes.) */
+
+.site-btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
-  background: #eceef2;
-  color: var(--muted);
-  text-align: center;
+  min-height: 48px;
+  padding: 0 26px;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: var(--ink);
+  color: #ffffff;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
-.photo-credit { margin-top: 6px; color: var(--muted); font-size: 12px; }
+.site-btn:active { background: #000000; }
+.site-btn-outline { background: transparent; color: var(--ink); }
+.site-btn-outline:active { background: rgba(0, 0, 0, 0.06); }
+@media (hover: hover) {
+  .site-btn { transition: background-color 0.2s, color 0.2s; }
+  .site-btn:hover { background: #000000; }
+  .site-btn-outline:hover { background: rgba(0, 0, 0, 0.04); }
+}
 
-.intro {
+/* Small letter-spaced label above a heading. Use sparingly. */
+.eyebrow {
+  margin: 0 0 14px;
+  color: var(--ink-3);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ---- Footer (filled in by js/footer.js) ---- */
+
+.site-footer {
+  padding: 0 var(--gutter);
+  background: var(--paper);
+  color: var(--ink-3);
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.34;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+.footer-inner { max-width: var(--site-width); margin: 0 auto; padding: 18px 0 22px; }
+.site-footer p,
+.site-footer ul,
+.site-footer h2 { margin: 0; }
+.site-footer ul { padding: 0; list-style: none; }
+.site-footer a { color: var(--ink-2); text-decoration: none; -webkit-tap-highlight-color: transparent; }
+@media (hover: hover) {
+  .site-footer a:hover { text-decoration: underline; }
+}
+/* Links inside a sentence are always underlined. */
+.footer-note a,
+.footer-contact a { text-decoration: underline; }
+
+.footer-note { padding-bottom: 16px; border-bottom: 1px solid var(--hairline); }
+
+.footer-breadcrumb { display: flex; align-items: center; min-height: 44px; }
+.footer-breadcrumb a { color: var(--ink); }
+.footer-chevron { margin: 0 9px; color: var(--ink-4); }
+.footer-breadcrumb [aria-current] { color: var(--ink-2); }
+
+.footer-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 26px 24px;
+  padding: 8px 0 4px;
+}
+.site-footer .footer-heading {
+  margin-bottom: 11px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+.footer-col li { margin-bottom: 10px; }
+.footer-col li > span { color: var(--ink-3); } /* plain text lines (not links) */
+
+.footer-contact { padding: 22px 0 10px; }
+
+/* Bottom row: copyright and notices on the left, "Science Research" on the right. */
+.footer-legal {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 16px 32px;
-  margin-top: 20px;
+  gap: 8px 28px;
+  padding-top: 10px;
+  border-top: 1px solid var(--hairline);
 }
-.intro h1 { margin: 0 0 4px; font-size: 26px; font-weight: 600; line-height: 1.25; }
-.intro p { margin: 0; max-width: 620px; color: var(--muted); }
+.footer-legal-left { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 28px; }
+.footer-legal-list { display: flex; flex-wrap: wrap; }
+/* Thin vertical lines between the notices. */
+.footer-legal-list li { padding: 0 9px; border-left: 1px solid var(--hairline); line-height: 1; }
+.footer-legal-list li:first-child { padding-left: 0; border-left: 0; }
+.footer-right { flex: none; }
 
-/* ---- About Us page ---- */
+/* ---- Headings for inner pages ---- */
 
-.prose { max-width: 720px; margin: 0 auto; padding: 24px 24px 40px; }
-.prose h1 { margin: 0 0 16px; font-size: 24px; font-weight: 600; }
-.prose h2 { margin: 24px 0 6px; font-size: 16px; font-weight: 600; }
-.prose p { margin: 0 0 10px; }
-.credits {
-  margin-top: 32px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-  font-size: 14px;
+.page-head { padding: 52px 0 28px; }
+.page-title {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: clamp(40px, 5.2vw, 56px);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.005em;
 }
-.credits h2 { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.03em; }
+.page-sub {
+  max-width: 36em;
+  margin: 12px 0 0;
+  color: var(--ink-3);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.47;
+  letter-spacing: -0.01em;
+}
+
+/* ---- About Us page (styles for the text you paste in) ---- */
+
+.prose {
+  min-height: 60vh;
+  padding: 52px var(--side) 96px;   /* the title lines up with Market Data and Researcher */
+  color: var(--ink-2);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+}
+.prose > * { max-width: 680px; }
+.prose h1 {
+  margin: 0 0 28px;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: clamp(40px, 5.2vw, 56px);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.005em;
+}
+.prose h2 {
+  margin: 44px 0 10px;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+.prose p { margin: 0 0 16px; }
+.prose a { color: var(--ink); }
+.prose img { display: block; max-width: 100%; height: auto; }
 
 /* ---- Market Data page ---- */
 
-.market-main { display: flex; flex-direction: column; }
+.market-main {
+  padding: 0 var(--side) 72px;
+  font-family: var(--sans);
+}
 
 .toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--border);
+  justify-content: space-between;
+  gap: 12px 24px;
+  margin-bottom: 16px;
 }
 .ticker-form { display: flex; gap: 8px; margin: 0; }
 .ticker-input {
-  width: 120px;
+  width: 140px;
   height: 44px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg);
-  color: var(--text);
+  padding: 0 12px;
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  background: #ffffff;
+  color: var(--ink);
   font: inherit;
   font-size: 16px;           /* 16px or more stops iPad Safari from zooming in on focus */
   font-weight: 600;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
+  -webkit-appearance: none;
+  appearance: none;
 }
-.ticker-input:focus { outline: none; border-color: var(--button); }
+.ticker-input::placeholder { color: var(--ink-4); font-weight: 400; letter-spacing: 0; text-transform: none; }
+.ticker-input:focus { outline: none; border-color: var(--ink); }
+.ticker-form .site-btn { min-height: 44px; padding: 0 22px; }
 .btn-small { min-height: 44px; min-width: 0; padding: 0 18px; }
 
-/* Segmented timeframe buttons: one bordered group, active one filled. */
+/* Segmented timeframe buttons: one bordered group, the active one filled. */
 .segmented {
   display: inline-flex;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
   overflow: hidden;
 }
 .segmented button {
-  min-width: 52px;
+  min-width: 58px;
   height: 44px;                /* tap target: at least 44px */
-  padding: 0 12px;
+  padding: 0 14px;
   border: 0;
-  border-left: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
+  border-left: 1px solid var(--hairline);
+  border-radius: 0;
+  background: #ffffff;
+  color: var(--ink-2);
   font: inherit;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 .segmented button:first-child { border-left: 0; }
-.segmented button[aria-pressed="true"] { background: var(--button); color: #ffffff; font-weight: 600; }
+.segmented button[aria-pressed="true"] { background: var(--ink); color: #ffffff; font-weight: 500; }
+@media (hover: hover) {
+  .segmented button[aria-pressed="false"]:hover { background: var(--paper); }
+}
 
 .status {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 2px 16px;
-  min-height: 29px;
-  padding: 5px 16px;
-  border-bottom: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 13px;
+  min-height: 30px;
+  padding: 10px 0 0;
+  color: var(--ink-3);
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 
+/* The chart and its pieces (shared with the experiment: keep these rules). */
 .chart-wrap { position: relative; flex: 1 1 auto; min-height: 280px; }
 .chart { position: absolute; inset: 0; }
 .chart-msg {
@@ -293,12 +519,24 @@ body.site > main { flex: 1 0 auto; width: 100%; }
   text-align: center;
   pointer-events: none;
 }
+
+/* Market Data: the chart sits in a hairline frame and fills most of the screen. */
+.market-main .chart-wrap {
+  height: 440px;                                        /* older browsers */
+  height: clamp(320px, calc(100vh - 330px), 760px);
+  height: clamp(320px, calc(100svh - 330px), 760px);
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
 .legend {
   position: absolute;
-  top: 8px;
-  left: 12px;
+  top: 10px;
+  left: 14px;
   right: 72px;               /* wrap before reaching the price scale */
   z-index: 3;
+  color: var(--text);
   font-size: 13px;
   line-height: 1.5;
   font-variant-numeric: tabular-nums;
@@ -308,10 +546,44 @@ body.site > main { flex: 1 0 auto; width: 100%; }
 .legend-values > span { display: inline-block; margin-right: 10px; white-space: nowrap; }
 .legend-values .lbl { margin-right: 3px; color: var(--muted); }
 
-/* Phones and narrow windows */
+/* ---- iPad portrait and smaller ---- */
+@media (max-width: 899px) {
+  .footer-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ---- Phones and narrow windows ---- */
 @media (max-width: 640px) {
-  .nav { padding-left: 4px; }
+  :root { --gutter: 16px; }
+  .nav { justify-content: space-between; }
   .nav-title { display: none; }
-  .wrap, .prose { padding-left: 16px; padding-right: 16px; }
-  .intro h1 { font-size: 22px; }
+  .nav-tab { padding: 0 10px; }
+  .nav-tab:first-of-type { margin-left: -10px; } /* the first link (the title span before it is hidden) */
+  .nav-tab:last-child { margin-right: -10px; }
+  .page-head { padding: 36px 0 22px; }
+  .prose { padding-top: 36px; padding-bottom: 64px; }
+  .ticker-form { flex: 1 1 100%; }
+  .ticker-input { flex: 1 1 0; width: 0; min-width: 0; } /* fills the row next to Load */
+  .segmented { flex: 1 1 100%; }
+  .segmented button { flex: 1 1 0; min-width: 0; }
+  .footer-legal { flex-direction: column; }
+  /* The notices stack, one per line. */
+  .footer-legal-list { flex-direction: column; row-gap: 8px; }
+  .footer-legal-list li { padding: 0; border-left: 0; line-height: inherit; }
+}
+
+/* ---- Touch screens (iPad, phones): footer links get a 44px tall tap area ---- */
+@media (pointer: coarse) {
+  .footer-col li { margin-bottom: 0; }
+  .footer-col li > a,
+  .footer-col li > span { display: block; padding: 7px 0; }
+  .footer-col a,
+  .footer-legal-list a { position: relative; }
+  .footer-col a::after { content: ""; position: absolute; left: 0; right: 0; top: -7px; bottom: -7px; }
+  .footer-legal-list a::after { content: ""; position: absolute; left: 0; right: 0; top: -15px; bottom: -15px; }
+  .site-footer .footer-heading { margin-bottom: 4px; }
+  .footer-breadcrumb a { display: flex; align-items: center; align-self: stretch; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-btn { transition: none; }
 }

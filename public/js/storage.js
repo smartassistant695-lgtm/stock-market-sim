@@ -1,4 +1,5 @@
 // Device storage and sending for the experiment (global: Store).
+// Used by simulation.html and researcher.html.
 //
 // - The current session is saved in localStorage after every step, so a
 //   refresh or closed tab can be resumed.
@@ -6,9 +7,14 @@
 // - Rows are sent to Google Sheets through /api/save in "batches". A batch
 //   stays in the outbox until the server answers HTTP 200 with ok:true.
 //   Failed batches stay in order and are retried automatically.
+// - At the end: small helpers both pages need (version choice, completed
+//   sessions, Sessions rows, the data file).
 
 (function () {
-  var KEYS = { session: 'sim.session', outbox: 'sim.outbox', backup: 'sim.backup', backupIds: 'sim.backupIds' };
+  var KEYS = {
+    session: 'sim.session', outbox: 'sim.outbox', backup: 'sim.backup', backupIds: 'sim.backupIds',
+    sendError: 'sim.sendError', // the last sending error, shared with other tabs ('' or missing = no error)
+  };
 
   // Column order for each sheet (docs/EXPERIMENT.md section 7).
   var COLUMNS = {
@@ -68,7 +74,9 @@
 
   // ---- Outbox and sending ----
 
-  var status = { sending: false, failing: false, lastError: '', lastSentAt: null };
+  // Whether sending fails is kept in localStorage (KEYS.sendError), so a
+  // Researcher page open in another tab shows it too.
+  var status = { sending: false, lastSentAt: null };
   var listeners = [];
   var retryTimer = null;
   var failures = 0;      // failed attempts in a row, for the backoff delay
@@ -82,12 +90,18 @@
     });
   }
 
+  function setSendError(text) {
+    if (text) set(KEYS.sendError, text);
+    else remove(KEYS.sendError);
+  }
+
   function getStatus() {
+    var error = get(KEYS.sendError, '');
     return {
       pending: outbox().length,
       sending: status.sending,
-      failing: status.failing,
-      lastError: status.lastError,
+      failing: Boolean(error),
+      lastError: error ? String(error) : '',
       lastSentAt: status.lastSentAt,
       storageError: storageError,
     };
@@ -102,6 +116,7 @@
     batchId = batchId || makeId();
     var box = outbox();
     if (box.some(function (b) { return b.batchId === batchId; })) return batchId;
+    sheets = completeRows(sheets);
 
     // Add to the local backup once per batch.
     var saved = get(KEYS.backupIds, []);
@@ -122,6 +137,21 @@
     return batchId;
   }
 
+  // Every row gets exactly the columns of its sheet, in order (a missing
+  // value becomes ''), because /api/save refuses rows with other columns.
+  function completeRows(sheets) {
+    var out = {};
+    Object.keys(sheets).forEach(function (name) {
+      var columns = COLUMNS[name];
+      out[name] = !columns ? sheets[name] : sheets[name].map(function (row) {
+        var clean = {};
+        columns.forEach(function (c) { clean[c] = row[c] === undefined ? '' : row[c]; });
+        return clean;
+      });
+    });
+    return out;
+  }
+
   function scheduleRetry() {
     clearTimeout(retryTimer);
     // 5 s, 10 s, 20 s, 40 s, then every 60 s.
@@ -134,8 +164,7 @@
     if (status.sending) return;
     var box = outbox();
     if (box.length === 0) {
-      status.failing = false;
-      status.lastError = '';
+      setSendError('');
       notify();
       return;
     }
@@ -147,16 +176,9 @@
     var controller = window.AbortController ? new AbortController() : null;
     var timeout = setTimeout(function () { if (controller) controller.abort(); }, 30000);
 
-    // The server only accepts experiment data with the hash of the researcher
-    // code, saved on this iPad when the researcher unlocked the page.
-    var headers = { 'Content-Type': 'application/json' };
-    var hash = null;
-    try { hash = localStorage.getItem('researcherHash'); } catch (e) { /* storage blocked */ }
-    if (hash) headers['x-researcher-hash'] = hash;
-
     fetch('/api/save', {
       method: 'POST',
-      headers: headers,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ batchId: batch.batchId, sheets: batch.sheets }),
       signal: controller ? controller.signal : undefined,
     })
@@ -173,16 +195,14 @@
         // Remove this batch only (another may have been added meanwhile).
         set(KEYS.outbox, outbox().filter(function (b) { return b.batchId !== batch.batchId; }));
         failures = 0;
-        status.failing = false;
-        status.lastError = '';
+        setSendError('');
         status.lastSentAt = new Date().toISOString();
         return true;
       }, function (err) {
         failures++;
-        status.failing = true;
-        if (err && err.name === 'AbortError') status.lastError = 'No answer from the server (timed out).';
-        else if (err instanceof TypeError) status.lastError = 'Could not reach the website (is the iPad offline?).';
-        else status.lastError = err && err.message ? err.message : String(err);
+        if (err && err.name === 'AbortError') setSendError('No answer from the server (timed out).');
+        else if (err instanceof TypeError) setSendError('Could not reach the website (is the iPad offline?).');
+        else setSendError(err && err.message ? err.message : String(err));
         return false;
       })
       .then(function (ok) {
@@ -201,6 +221,12 @@
   }
 
   window.addEventListener('online', function () { retryNow(); });
+
+  // Another tab on this iPad changed the saved data (for example the
+  // simulation in one tab and the Researcher page in another).
+  window.addEventListener('storage', function (e) {
+    if (!e.key || e.key.indexOf('sim.') === 0) notify();
+  });
 
   // ---- CSV export ----
 
@@ -250,6 +276,104 @@
     return csv;
   }
 
+  // ---- Shared by simulation.html and researcher.html ----
+
+  // Single text values, saved as plain text (not JSON).
+  function getText(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  }
+  function setText(key, value) {
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch (e) {
+      storageError = 'This iPad could not save data in its storage (it may be full, or Private Browsing may be on).';
+      return false;
+    }
+  }
+
+  // Version choice: 'auto' or '1'..'4' (set on the Researcher page).
+  // A manual choice stays until it is set back to Auto.
+  function versionMode() {
+    var m = getText('sim.versionMode');
+    return m === '1' || m === '2' || m === '3' || m === '4' ? m : 'auto';
+  }
+  function setVersionMode(mode) { setText('sim.versionMode', mode); }
+
+  // Auto mode: rotates 1 > 2 > 3 > 4 > 1, moving on only when a session is completed.
+  function nextAutoVersion() {
+    var v = Number(getText('sim.nextVersion'));
+    return v >= 1 && v <= 4 ? v : 1;
+  }
+  function setNextAutoVersion(v) { setText('sim.nextVersion', String(v)); }
+
+  // The version the next new session will use.
+  function nextVersion() {
+    var m = versionMode();
+    return m === 'auto' ? nextAutoVersion() : Number(m);
+  }
+
+  // Sessions completed on this device: [{ participant_id, version, session_id, timestamp }]
+  function completed() { return get('sim.completed', []); }
+
+  // iPad Safari reports itself as a Mac ("Macintosh"), so the user agent
+  // alone does not show an iPad. touch > 1 on a Mac user agent means an iPad;
+  // the screen size tells the model apart.
+  function deviceInfo() {
+    return navigator.userAgent + ' | touch=' + (navigator.maxTouchPoints || 0) +
+      ' | screen=' + screen.width + 'x' + screen.height;
+  }
+
+  // One row in the Sessions tab. s is the saved session (see experiment.js);
+  // event is 'started', 'completed', 'consent_declined', 'exited_by_researcher' or 'resumed'.
+  function logSession(s, event) {
+    queue({
+      Sessions: [{
+        participant_id: s.participantId,
+        version: s.version,
+        version_mode: s.versionMode,
+        session_id: s.sessionId,
+        event: event,
+        timestamp: new Date().toISOString(),
+        device: deviceInfo(),
+      }],
+    });
+  }
+
+  // The data file (public/data/stocks.json). Resolves to { data, error }:
+  // data is null and error says why when the file is missing or incomplete.
+  function loadData() {
+    var C = window.CONFIG;
+    return fetch(C.DATA_URL, { cache: 'no-cache' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('the server answered ' + r.status);
+        return r.json();
+      })
+      .then(function (d) {
+        checkData(d, C);
+        return { data: d, error: '' };
+      })
+      .catch(function (err) {
+        return { data: null, error: err && err.message ? err.message : String(err) };
+      });
+  }
+
+  // Check that the file has everything the Latin square needs.
+  function checkData(d, C) {
+    var DAY = C.SESSION_MINUTES;
+    if (!d || !Array.isArray(d.stocks) || !d.practice) throw new Error('the file has no "stocks" list or "practice" stock');
+    Object.keys(C.LATIN_SQUARE).forEach(function (v) {
+      C.LATIN_SQUARE[v].forEach(function (pair) {
+        var s = d.stocks.find(function (x) { return x.id === pair[0]; });
+        if (!s) throw new Error('stock ' + pair[0] + ' is missing');
+        if (!Array.isArray(s.m1) || s.m1.length < 3 * DAY) throw new Error('stock ' + pair[0] + ' does not have 3 full days of 1-minute rows');
+        if (!C.TIMEFRAMES[pair[1]]) throw new Error('unknown timeframe ' + pair[1] + ' in CONFIG.LATIN_SQUARE');
+      });
+    });
+    if (!Array.isArray(d.practice.m1) || d.practice.m1.length < 2 * DAY) throw new Error('the practice stock does not have 2 full days of 1-minute rows');
+    if (!C.TIMEFRAMES[C.PRACTICE_TIMEFRAME]) throw new Error('unknown PRACTICE_TIMEFRAME in config.js');
+  }
+
   window.Store = {
     COLUMNS: COLUMNS,
     get: get,
@@ -268,6 +392,15 @@
     onChange: onChange,
     toCSV: toCSV,
     downloadSheet: downloadSheet,
+    getText: getText,
+    versionMode: versionMode,
+    setVersionMode: setVersionMode,
+    nextAutoVersion: nextAutoVersion,
+    setNextAutoVersion: setNextAutoVersion,
+    nextVersion: nextVersion,
+    completed: completed,
+    logSession: logSession,
+    loadData: loadData,
   };
 
   // Check that storage works, then send anything left over from before

@@ -1,31 +1,26 @@
-Home page photo
+HOME PAGE PHOTO
 ===============
 
-The home page (public/index.html) shows a large photo of the Charging Bull
-statue on Wall Street. Until the file exists, the page shows a grey box that
-says "Add your licensed photo here".
+The Home page uses public/images/hero.jpg as its full-screen background.
+The current photo is the NYSE trading floor by Jamal Eid / NYSE, used with
+permission. Keep the permission message in case a judge asks about it.
 
-1. Use a photo you are allowed to use: your own photo, or one with a license
-   that allows reuse (for example Creative Commons on Wikimedia Commons).
-   Write down the photographer's name and the license.
+To change the photo
+-------------------
+1. Pick a landscape photo, ideally at least 2400 pixels wide, JPG, under
+   about 1 MB. The title panel sits in the lower left, so a calm area there
+   reads best.
+2. Name it exactly: hero.jpg
+3. On github.com open the repository, go into public > images, click
+   Add file > Upload files, drop the photo in and click Commit changes.
+   Uploading a file with the same name replaces the old one. Vercel puts it
+   online in about a minute.
+4. Update the credit in two places:
+   - public/index.html, the line under <!-- EDIT PHOTO CREDIT -->
+   - public/js/footer.js, "photographer" at the top
+5. If the wrong part of the photo shows, change --photo-position in
+   public/css/home.css (EDIT PHOTO POSITION).
 
-2. Save it with exactly this name, in this folder:
-
-       public/images/charging-bull.jpg
-
-   (all lowercase, ".jpg" not ".jpeg" or ".png").
-
-3. Recommended size: 2400 x 1050 pixels (a wide 16:7 shape), JPG,
-   under 500 KB. Other sizes work too; the page crops the photo to 16:7
-   from the center, so keep the bull near the middle.
-
-4. Update the credit line under the photo. Open public/index.html and find
-   the line after <!-- EDIT PHOTO CREDIT -->:
-
-       Photo: [Photographer name], [license]
-
-   Replace it, for example: Photo: Jane Doe, CC BY-SA 4.0
-
-5. Upload the photo to GitHub (open this repository on github.com, go into
-   the public/images folder, Add file > Upload files, Commit changes).
-   Vercel updates the site about a minute later.
+Only use photos you have permission for: your own, ones you were given
+permission to use, Unsplash (free under the Unsplash license), or Wikimedia
+Commons (usually requires a credit with the photographer's name).

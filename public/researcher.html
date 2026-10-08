@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Researcher - Stock Chart Study</title>
+  <link rel="icon" href="data:,">
+  <link rel="preload" href="fonts/cormorant-garamond/cormorant-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/researcher.css">
+</head>
+<body class="site">
+  <nav class="nav"><span class="nav-title">Noah &amp; Jojo</span><a class="nav-tab" href="index.html">Home</a><a class="nav-tab" href="simulation.html">Simulation</a><a class="nav-tab" href="about.html">About Us</a><a class="nav-tab" href="market.html">Market Data</a><a class="nav-tab" href="contact.html">Contact Us</a></nav>
+
+  <main class="r">
+
+    <!-- Locked: ask for the researcher code -->
+    <section id="r-lock" hidden>
+      <header class="page-head">
+        <h1 class="page-title">Researcher</h1>
+        <p class="page-sub">Enter the researcher code to see the saved results and settings on this iPad.</p>
+      </header>
+      <form id="r-form" class="r-form" autocomplete="off">
+        <label class="r-field-label" for="r-code">Researcher code</label>
+        <div class="r-form-row">
+          <input id="r-code" class="r-input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <button id="r-unlock" class="site-btn" type="submit">Unlock</button>
+        </div>
+        <p id="r-msg" class="r-msg" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <!-- Unlocked -->
+    <section id="r-panel" hidden>
+      <header class="page-head r-head">
+        <div>
+          <h1 class="page-title">Researcher</h1>
+          <p class="page-sub">Saved results and settings on this iPad.</p>
+        </div>
+        <div class="r-lock-box">
+          <button id="r-lock-btn" class="site-btn site-btn-outline" type="button">Lock this iPad</button>
+          <p id="r-unlocked-until" class="r-unlocked-until"></p>
+        </div>
+      </header>
+
+      <!-- Red warning boxes (shown only when something is wrong) -->
+      <div id="r-send-warning" class="r-warn" role="alert" hidden>
+        <p class="r-warn-title">Sending to Google Sheets failed.</p>
+        <p>The results are still saved on this iPad and are sent again automatically.</p>
+        <p>Error: <span id="r-send-error"></span></p>
+        <button id="r-retry" class="site-btn" type="button">Retry sending now</button>
+      </div>
+      <div id="r-data-warning" class="r-warn" hidden></div>
+      <div id="r-storage-warning" class="r-warn" hidden></div>
+
+      <section class="r-group">
+        <h2 class="r-h2">Data file</h2>
+        <div class="r-rows">
+          <div class="r-row"><span class="r-label">Status</span><span id="r-data-status" class="r-value">Loading...</span></div>
+          <div class="r-row"><span class="r-label">Stocks</span><span id="r-data-stocks" class="r-value"></span></div>
+          <div class="r-row"><span class="r-label">Trading days</span><span id="r-data-dates" class="r-value num"></span></div>
+          <div class="r-row"><span class="r-label">Created</span><span id="r-data-generated" class="r-value num"></span></div>
+        </div>
+      </section>
+
+      <section class="r-group">
+        <h2 class="r-h2">Version</h2>
+        <div class="r-rows">
+          <div class="r-row r-row-control">
+            <span class="r-label" id="r-version-label">Version setting</span>
+            <div id="r-version" class="segmented" role="group" aria-labelledby="r-version-label">
+              <button type="button" data-mode="auto">Auto</button>
+              <button type="button" data-mode="1">1</button>
+              <button type="button" data-mode="2">2</button>
+              <button type="button" data-mode="3">3</button>
+              <button type="button" data-mode="4">4</button>
+            </div>
+          </div>
+          <div class="r-row"><span class="r-label">Next session uses</span><span id="r-next-version" class="r-value"></span></div>
+          <div class="r-row"><span class="r-label">Completed on this iPad</span><span id="r-counts" class="r-value num"></span></div>
+        </div>
+      </section>
+
+      <section class="r-group">
+        <h2 class="r-h2">Sending</h2>
+        <div class="r-rows">
+          <div class="r-row"><span class="r-label">Waiting to send</span><span id="r-pending" class="r-value num"></span></div>
+          <div class="r-row"><span class="r-label">Rows saved on this iPad</span><span id="r-backup" class="r-value num"></span></div>
+          <div class="r-row r-row-buttons">
+            <button class="site-btn site-btn-outline" type="button" data-download="Actions">Actions CSV</button>
+            <button class="site-btn site-btn-outline" type="button" data-download="Summary">Summary CSV</button>
+            <button class="site-btn site-btn-outline" type="button" data-download="Sessions">Sessions CSV</button>
+          </div>
+        </div>
+        <p class="r-note">The CSV files are copies of everything saved on this iPad. Google Sheets is the main copy.</p>
+      </section>
+
+      <section class="r-group">
+        <h2 class="r-h2">Unfinished session</h2>
+        <div class="r-rows">
+          <div id="r-no-session" class="r-row"><span class="r-label">None on this iPad</span></div>
+          <div id="r-session-rows" hidden>
+            <div class="r-row"><span class="r-label">Participant</span><span id="r-session-pid" class="r-value"></span></div>
+            <div class="r-row"><span class="r-label">Where they are</span><span id="r-session-where" class="r-value"></span></div>
+            <div class="r-row"><span class="r-label">Started</span><span id="r-session-started" class="r-value num"></span></div>
+            <div class="r-row r-row-buttons">
+              <button id="r-end" class="site-btn site-btn-outline" type="button">End that session</button>
+            </div>
+          </div>
+        </div>
+        <p class="r-note">The simulation page offers to continue an unfinished session. End it here if the participant will not come back.</p>
+      </section>
+    </section>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/researcher.js"></script>
+
+  <footer id="site-footer" data-page="Researcher"></footer>
+  <script src="js/footer.js"></script>
+</body>
+</html>

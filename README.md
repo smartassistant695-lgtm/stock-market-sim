@@ -22,10 +22,12 @@ needs to allow `*.vercel.app`, and your keys stay hidden on the server.
 
 | Address | What it is |
 |---|---|
-| `/` (Home) | Bull photo, project title, start button |
-| `/simulation.html` | The experiment (needs the researcher code) |
-| `/about.html` | About Us text and credits |
+| `/` (Home) | Full-screen photo, project title, short text about the study |
+| `/simulation.html` | The experiment (start screen, no code) |
+| `/about.html` | About Us text |
 | `/market.html` | Live stock charts for visitors |
+| `/contact.html` | Contact form; messages go to the **Contact** tab of the Google Sheet |
+| `/researcher.html` | Researcher only (small link in the footer, needs the researcher code): version, sending status, CSV downloads |
 | `/builder.html` | Researcher only: builds the real experiment data from Alpaca |
 | `/test.html` | Connection test (Stage 0) |
 
@@ -33,9 +35,10 @@ needs to allow `*.vercel.app`, and your keys stay hidden on the server.
 
 | What | File | Look for |
 |---|---|---|
-| Bull photo | `public/images/charging-bull.jpg` (add this file) | see `public/images/README.txt` |
-| Photo credit and project title | `public/index.html` | `EDIT PHOTO CREDIT`, `EDIT PROJECT TITLE` |
-| About Us text | `public/about.html` | `EDIT ABOUT US TEXT BELOW` |
+| Home photo | `public/images/hero.jpg` (NYSE photo by Jamal Eid, used with permission) | see `public/images/README.txt` |
+| Photo credit, project title, the small label above it, the study text | `public/index.html` | `EDIT PHOTO CREDIT`, `EDIT PROJECT TITLE`, `EDIT LABEL`, `EDIT STUDY TEXT` |
+| Footer: names, school, email, photo credit | `public/js/footer.js` | `EDIT THE FOOTER TEXT HERE` |
+| About Us text | `public/about.html` | `PASTE YOUR ABOUT US TEXT HERE` |
 | Consent text | `public/simulation.html` | `EDIT CONSENT TEXT BELOW` |
 | Timing, cash, number of checkpoints | `public/js/config.js` | comments next to each number |
 
@@ -120,33 +123,43 @@ Deploy**.
 6. Upload the file: on github.com open this repository, go into the
    `public/data` folder, and click **Add file > Upload files**. Choose
    `stocks.json` and click **Commit changes**.
-7. About a minute later the "Placeholder data" warning on the researcher
-   screen disappears.
+7. About a minute later the "Placeholder data" warning on the Researcher
+   page and the red "Practice data" line on the simulation start screen
+   disappear.
 
 Until you do this, the experiment runs on made-up placeholder prices so you can
 try it out.
 
 ## Step 4. Running a participant
 
-1. Turn the iPad to landscape, open `/simulation.html`, and enter the
-   researcher code.
-2. On the researcher screen, check that the sending status has no red warning.
-   The version rotates automatically 1 > 2 > 3 > 4; you can override it.
-3. Tap **Start new session** and hand the iPad to the participant. For the
-   strongest lockdown, turn on Guided Access (Settings > Accessibility >
-   Guided Access, then triple-click the top button) or open the site from a
-   Home Screen icon (Share > Add to Home Screen).
-4. When they finish, press and hold the **top-left corner** of the screen for 3
-   seconds and enter the code. This hidden exit also works in the middle of a
-   session.
+1. Turn the iPad to landscape and open `/simulation.html`. Under the
+   **Begin** button, check that the line says "All results uploaded." and that
+   there is no red line.
+2. To check or choose the version, open the **Researcher** page (the small
+   link at the bottom of the page) and enter the researcher code. The version
+   rotates automatically 1 > 2 > 3 > 4; you can choose one by hand there. The
+   Researcher page locks again when the next session starts, so you enter the
+   code again the next time you open it.
+3. Go back to `/simulation.html`, tap **Begin** and hand the iPad to the
+   participant. For the strongest lockdown, turn on Guided Access (Settings >
+   Accessibility > Guided Access, then triple-click the top button) or open
+   the site from a Home Screen icon (Share > Add to Home Screen).
+4. When they reach the thank-you screen, press and hold the **top-left
+   corner** of the screen for 3 seconds (no code). The page goes back to the
+   start screen, ready for the next participant. The same hold in the middle
+   of a session asks "End this session?".
 5. If the page is closed or refreshed by accident, open `/simulation.html`
-   again. It offers to resume the participant where they left off.
+   again. It shows **Continue where you left off**.
 
 **Getting the data.** Rows appear in your Google Sheet after every stock, in
 the tabs **Actions**, **Summary** and **Sessions**. The iPad also keeps a
-backup copy: the researcher screen has **Actions CSV / Summary CSV / Sessions
+backup copy: the Researcher page has **Actions CSV / Summary CSV / Sessions
 CSV** buttons that save files to the iPad's Files app (Downloads folder). If a
-send fails, the researcher screen shows a red warning and keeps retrying.
+send fails, the start screen says how many results are waiting, the
+Researcher page shows a red warning with the error and **Retry sending now**,
+and the iPad keeps retrying on its own. No code is needed to take part, so
+anyone who opens the site can add rows: use the participant numbers you hand
+out to find your participants' rows (`docs/EXPERIMENT.md`, section 7).
 
 ## If something fails
 
@@ -157,7 +170,6 @@ send fails, the researcher screen shows a red warning and keeps retrying.
 | "Google did not return JSON" | The Apps Script access isn't **Anyone**, or you used a school account |
 | A Vercel login page appears | You opened a preview link. Use the main `<project>.vercel.app` address |
 | Researcher code says "not set" | Add `RESEARCHER_CODE`, then redeploy |
-| Sending failed: "Not allowed to save" | The researcher code was changed. Tap **Lock**, unlock with the new code, then **Retry sending now** |
 | Market Data or Data Builder says the keys are missing | Add both Alpaca keys, then redeploy |
 | Device storage: Blocked | Turn off Private Browsing |
 

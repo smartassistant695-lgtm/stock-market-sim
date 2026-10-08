@@ -5,35 +5,51 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Stock Chart Study</title>
   <link rel="icon" href="data:,">
+  <link rel="preload" href="fonts/cormorant-garamond/cormorant-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/home.css">
+  <script>
+    // If the photo file is missing, the first screen stays plain dark
+    // and a small note in the corner says where to put the photo.
+    (function () {
+      var photo = new Image();
+      photo.onerror = function () { document.documentElement.classList.add('no-photo'); };
+      photo.src = 'images/hero.jpg';
+    })();
+  </script>
 </head>
 <body class="site">
-  <nav class="nav"><span class="nav-title">Stock Chart Study</span><a class="nav-tab" href="index.html" aria-current="page">Home</a><a class="nav-tab" href="simulation.html">Simulation</a><a class="nav-tab" href="about.html">About Us</a><a class="nav-tab" href="market.html">Market Data</a></nav>
+  <nav class="nav nav-on-photo"><span class="nav-title">Noah &amp; Jojo</span><a class="nav-tab" href="index.html" aria-current="page">Home</a><a class="nav-tab" href="simulation.html">Simulation</a><a class="nav-tab" href="about.html">About Us</a><a class="nav-tab" href="market.html">Market Data</a><a class="nav-tab" href="contact.html">Contact Us</a></nav>
 
-  <main class="wrap">
-    <figure class="photo">
-      <!-- The photo file goes in public/images/ (see public/images/README.txt).
-           If the file is missing, the grey box below is shown instead. -->
-      <img src="images/charging-bull.jpg" width="2400" height="1050"
-           alt="The Charging Bull statue near Wall Street, New York"
-           onerror="this.hidden = true; this.nextElementSibling.hidden = false;">
-      <div class="photo-missing" hidden>Add your licensed photo here: public/images/charging-bull.jpg</div>
-      <!-- EDIT PHOTO CREDIT -->
-      <figcaption class="photo-credit">Photo: [Photographer name], [license]</figcaption>
-    </figure>
-
-    <div class="intro">
-      <div>
-        <!-- EDIT PROJECT TITLE -->
-        <h1>Chart Timeframes and Trading Decisions</h1>
-        <p>A short experiment on whether the time span of each candle on a stock chart changes how people trade and how volatile a stock feels.</p>
+  <main>
+    <!-- The photo is public/images/hero.jpg (see public/images/README.txt).
+         Its position on the screen is set in css/home.css (EDIT PHOTO POSITION). -->
+    <section class="hero">
+      <div class="hero-panel">
+        <!-- EDIT LABEL (the small line above the title) -->
+        <p class="hero-label">A psychology study · 2026</p>
+        <!-- EDIT PROJECT TITLE (<br> starts a new line) -->
+        <h1 class="hero-title">Noah and Jojo’s<br>Science Research Project</h1>
+        <p class="hero-text">How the timeframe of a stock chart changes the way people trade and how risky a stock feels.</p>
+        <div class="hero-buttons">
+          <a class="site-btn" href="simulation.html">Enter the simulation</a>
+          <a class="site-btn site-btn-outline" href="market.html">Market data</a>
+        </div>
       </div>
-      <a class="btn" href="simulation.html">Start the simulation</a>
-    </div>
+
+      <!-- EDIT PHOTO CREDIT -->
+      <p class="hero-credit">Photo: Jamal Eid / NYSE. Used with permission.</p>
+      <p class="hero-missing">Add the photo: public/images/hero.jpg</p>
+    </section>
+
+    <section class="study" aria-labelledby="study-label">
+      <p class="eyebrow" id="study-label">The study</p>
+      <!-- EDIT STUDY TEXT -->
+      <p class="study-text">Each participant trades four stocks with virtual money, and each stock is shown at a different chart timeframe: one minute, five minutes, ten minutes or one hour. We compare how people trade and how risky each stock feels to them.</p>
+    </section>
   </main>
 
-  <footer class="site-footer">
-    Charts by <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView Lightweight Charts™</a>, Copyright (c) 2025 TradingView, Inc.
-  </footer>
+  <footer id="site-footer" data-page="Home"></footer>
+  <script src="js/footer.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-// Simulation page: researcher controls, the participant session, and trading.
+// Simulation page: the start screen, the participant session, and trading.
 // The design is described in docs/EXPERIMENT.md (sections 3-8).
 //
 // How the pieces fit:
@@ -6,6 +6,7 @@
 // - Store (js/storage.js) saves the session after every step and sends data.
 // - createSimChart (js/sim-chart.js) draws the candles.
 // - This file shows one screen at a time and runs each stock ("trial").
+// - Researcher settings (version choice, downloads) are on researcher.html.
 
 (function () {
   'use strict';
@@ -25,139 +26,46 @@
   function round2(x) { return Math.round(x * 100) / 100; }
   function nowIso() { return new Date().toISOString(); }
 
-  // Plain localStorage access for single string values (researcherHash is a plain hex string).
-  function rawGet(key) {
-    try { return localStorage.getItem(key); } catch (e) { return null; }
-  }
-  function rawSet(key, value) {
-    try { localStorage.setItem(key, value); } catch (e) { /* ignore */ }
-  }
-  function rawRemove(key) {
-    try { localStorage.removeItem(key); } catch (e) { /* ignore */ }
-  }
-
   // ===================================================================
-  // Data file (public/data/stocks.json)
+  // Data file (public/data/stocks.json, checked in storage.js)
   // ===================================================================
 
   var data = null;
   var dataError = '';
 
-  // Check that the file has everything the Latin square needs.
-  function checkData(d) {
-    if (!d || !Array.isArray(d.stocks) || !d.practice) throw new Error('the file has no "stocks" list or "practice" stock');
-    Object.keys(C.LATIN_SQUARE).forEach(function (v) {
-      C.LATIN_SQUARE[v].forEach(function (pair) {
-        var s = d.stocks.find(function (x) { return x.id === pair[0]; });
-        if (!s) throw new Error('stock ' + pair[0] + ' is missing');
-        if (!Array.isArray(s.m1) || s.m1.length < 3 * DAY) throw new Error('stock ' + pair[0] + ' does not have 3 full days of 1-minute rows');
-        if (!C.TIMEFRAMES[pair[1]]) throw new Error('unknown timeframe ' + pair[1] + ' in CONFIG.LATIN_SQUARE');
-      });
-    });
-    if (!Array.isArray(d.practice.m1) || d.practice.m1.length < 2 * DAY) throw new Error('the practice stock does not have 2 full days of 1-minute rows');
-    if (!C.TIMEFRAMES[C.PRACTICE_TIMEFRAME]) throw new Error('unknown PRACTICE_TIMEFRAME in config.js');
-  }
-
-  var dataReady = fetch(C.DATA_URL, { cache: 'no-cache' })
-    .then(function (r) {
-      if (!r.ok) throw new Error('the server answered ' + r.status);
-      return r.json();
-    })
-    .then(function (d) {
-      checkData(d);
-      data = d;
-    })
-    .catch(function (err) {
-      dataError = err && err.message ? err.message : String(err);
-    })
-    .then(function () {
-      renderGateData();
-      if (currentScreen === 'panel') renderPanel();
-    });
-
-  // ===================================================================
-  // Researcher code
-  // ===================================================================
-
-  async function sha256Hex(text) {
-    if (!(window.crypto && crypto.subtle && window.TextEncoder)) return null;
-    var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-    return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
-  }
-
-  // Ask the server. Returns { state, msg }: state is 'ok', 'wrong', 'error'
-  // (server problem, msg = the server's own explanation if it sent one) or 'offline'.
-  async function askServer(code) {
-    try {
-      var r = await fetch('/api/researcher', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: code }),
-      });
-      var d = null;
-      try { d = await r.json(); } catch (e) { /* not JSON */ }
-      if (r.status === 200 && d && d.ok === true) return { state: 'ok' };
-      if (r.status === 401) return { state: 'wrong' };
-      // For example "RESEARCHER_CODE is not set in Vercel".
-      return { state: 'error', msg: d && typeof d.error === 'string' ? d.error : '' };
-    } catch (e) {
-      return { state: 'offline' };
-    }
-  }
-
-  // Full check (the gate): the server decides. If the server cannot be
-  // reached, fall back to the hash saved on this device from an earlier login.
-  async function checkCodeOnline(code) {
-    var result = await askServer(code);
-    var stored = rawGet('researcherHash');
-    var hash = await sha256Hex(code);
-    if (result.state === 'ok') {
-      if (hash) rawSet('researcherHash', hash);
-      return { ok: true };
-    }
-    if (result.state === 'wrong') {
-      // An old code that was changed in Vercel stops working offline too.
-      if (hash && hash === stored) rawRemove('researcherHash');
-      return { ok: false, msg: 'Wrong code.' };
-    }
-    if (stored && hash) {
-      if (hash === stored) return { ok: true };
-      if (result.state === 'offline') return { ok: false, msg: 'Wrong code.' };
-    }
-    if (result.state === 'offline') {
-      return { ok: false, msg: 'Could not reach the server to check the code. Check the internet connection and try again.' };
-    }
-    return {
-      ok: false,
-      msg: result.msg
-        ? 'The server could not check the code: ' + result.msg + '.'
-        : 'The server could not check the code. Try again in a moment.',
-    };
-  }
-
-  // Quick check (hidden exit, resume): the saved hash works offline and
-  // without waiting. Any other code is checked by the server, so a code that
-  // was changed in Vercel works here too. Returns { ok, msg }.
-  async function checkCodeQuick(code) {
-    var stored = rawGet('researcherHash');
-    if (stored && (await sha256Hex(code)) === stored) return { ok: true };
-    return checkCodeOnline(code);
-  }
+  var dataReady = Store.loadData().then(function (result) {
+    data = result.data;
+    dataError = result.error;
+    renderStart();
+  });
 
   // ===================================================================
   // Screens and the in-session lockdown
   // ===================================================================
 
-  var SCREENS = ['gate', 'panel', 'paused', 'consent', 'declined', 'pid', 'instructions', 'intro', 'trade', 'rating', 'thanks'];
+  var SCREENS = ['start', 'paused', 'consent', 'declined', 'pid', 'instructions', 'intro', 'trade', 'rating', 'thanks'];
   var currentScreen = null;
   var inSession = false;
 
   function show(name) {
     SCREENS.forEach(function (s) { $('screen-' + s).hidden = s !== name; });
     currentScreen = name;
+    updateScrollCues();
   }
 
-  // Participant screens hide the navigation and lock the page in place.
+  // Long text (consent) scrolls inside its box. While more text is below,
+  // the box gets the class "has-more", which shows "Scroll to read the rest."
+  function updateScrollCues() {
+    document.querySelectorAll('.text-scroll').forEach(function (box) {
+      var more = box.clientHeight > 0 && box.scrollTop + box.clientHeight < box.scrollHeight - 2;
+      box.classList.toggle('has-more', more);
+    });
+  }
+  document.addEventListener('scroll', updateScrollCues, true); // scrolling inside a box
+  window.addEventListener('resize', updateScrollCues);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(updateScrollCues);
+
+  // Participant screens hide the navigation and footer and lock the page in place.
   function setInSession(on) {
     inSession = on;
     document.documentElement.classList.toggle('in-session', on);
@@ -206,19 +114,10 @@
   document.addEventListener('dblclick', function (e) { if (inSession) e.preventDefault(); });
 
   // ===================================================================
-  // Versions (counterbalancing) and completed sessions on this device
+  // Completed sessions on this device (the version rotation is in storage.js)
   // ===================================================================
 
-  // 'auto' or '1'..'4'. A manual choice stays until it is set back to Auto.
-  function versionMode() {
-    var m = rawGet('sim.versionMode');
-    return m === '1' || m === '2' || m === '3' || m === '4' ? m : 'auto';
-  }
-  function nextAutoVersion() {
-    var v = Number(rawGet('sim.nextVersion'));
-    return v >= 1 && v <= 4 ? v : 1;
-  }
-  function completedList() { return Store.get('sim.completed', []); }
+  function completedList() { return Store.completed(); }
 
   function idAlreadyCompleted(id) {
     var key = id.toLowerCase();
@@ -234,32 +133,22 @@
   //   screen: 'consent' | 'pid' | 'instructions' | 'intro' | 'trade' | 'rating',
   //   trialIndex: 0 = practice, 1-4 = stocks,
   //   trial: { k (checkpoint index), phase ('decision' | 'animating'), cash, shares, trades, rows },
-  //   exitLogged: true after an exited_by_researcher row (so it is not logged twice)
+  //   createdAt
   // }
   var S = null;
 
   function save() { if (S) Store.saveSession(S); }
 
-  // iPad Safari reports itself as a Mac ("Macintosh"), so the user agent
-  // alone does not show an iPad. touch > 1 on a Mac user agent means an iPad;
-  // the screen size tells the model apart.
-  function deviceInfo() {
-    return navigator.userAgent + ' | touch=' + (navigator.maxTouchPoints || 0) +
-      ' | screen=' + screen.width + 'x' + screen.height;
-  }
+  function logSession(event) { Store.logSession(S, event); }
 
-  function logSession(event) {
-    Store.queue({
-      Sessions: [{
-        participant_id: S.participantId,
-        version: S.version,
-        version_mode: S.versionMode,
-        session_id: S.sessionId,
-        event: event,
-        timestamp: nowIso(),
-        device: deviceInfo(),
-      }],
-    });
+  // The saved session, or null. Unreadable saved state is dropped rather than getting stuck.
+  function loadSavedSession() {
+    var s = Store.loadSession();
+    if (s && !(s.sessionId && C.LATIN_SQUARE[s.version])) {
+      Store.clearSession();
+      s = null;
+    }
+    return s;
   }
 
   // The practice stock plus the 4 stocks of this version, in order.
@@ -307,35 +196,38 @@
     render();
   }
 
+  // A new session: the version comes from the rotation, or the Researcher page's manual choice.
   function startSession() {
-    var mode = versionMode();
+    // Lock the Researcher page again (see researcher.js), so a participant who
+    // later taps the footer link cannot change settings or download results.
+    Store.remove('researcher.unlock');
+    var mode = Store.versionMode();
     S = {
       sessionId: Store.makeId(),
       participantId: '',
-      version: mode === 'auto' ? nextAutoVersion() : Number(mode),
+      version: Store.nextVersion(),
       versionMode: mode === 'auto' ? 'auto' : 'manual',
       screen: 'consent',
       trialIndex: 0,
       trial: null,
-      exitLogged: false,
       createdAt: nowIso(),
     };
     save();
     render();
   }
 
-  // Resume after a refresh or the hidden exit: back to the start of the
+  // Continue after a refresh or a closed tab: back to the start of the
   // current segment, decision or screen.
   function resumeSession() {
     logSession('resumed');
-    S.exitLogged = false;
-    save();
     render();
   }
 
-  // The researcher ends a session that will not be finished.
+  // The researcher ends a session that will not be finished. Stocks already
+  // finished stay saved; the rest of the session is discarded.
   function endSession() {
-    if (!S.exitLogged) logSession('exited_by_researcher');
+    stopAnimation();
+    logSession('exited_by_researcher');
     Store.clearSession();
     S = null;
   }
@@ -713,7 +605,7 @@
     list.push({ participant_id: S.participantId, version: S.version, session_id: S.sessionId, timestamp: nowIso() });
     Store.set('sim.completed', list);
     // Auto mode moves on to the next version only when a session is completed.
-    if (S.versionMode === 'auto') rawSet('sim.nextVersion', String(S.version % 4 + 1));
+    if (S.versionMode === 'auto') Store.setNextAutoVersion(S.version % 4 + 1);
     Store.clearSession();
     S = null;
     show('thanks');
@@ -729,235 +621,121 @@
   zone.addEventListener('pointerdown', function (e) {
     e.preventDefault();
     clearTimeout(holdTimer);
-    holdTimer = setTimeout(openExitPrompt, 3000);
+    holdTimer = setTimeout(onLongPress, 3000);
   });
   ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (type) {
     zone.addEventListener(type, function () { clearTimeout(holdTimer); });
   });
   zone.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  function openExitPrompt() {
+  // After the hold, ignore the tap that the lifting finger may cause, so it
+  // cannot press whatever is now under it.
+  var ignoreClicksUntil = 0;
+  document.addEventListener('click', function (e) {
+    if (Date.now() < ignoreClicksUntil) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+  ['pointerup', 'pointercancel'].forEach(function (type) {
+    document.addEventListener(type, function () {
+      if (ignoreClicksUntil > Date.now()) ignoreClicksUntil = Date.now() + 400;
+    }, true);
+  });
+
+  function onLongPress() {
     if (!inSession) return;
-    hold.prompt = true;
-    $('exit-code').value = '';
+    ignoreClicksUntil = Date.now() + 10000; // shortened when the finger lifts
+    // Thank-you or "did not agree" screen: straight back to the start, ready for the next participant.
+    if (!S) { showStart(); return; }
+    hold.prompt = true; // the chart waits while the question is open
     $('exit-prompt').hidden = false;
   }
 
   function closeExitPrompt() {
     $('exit-prompt').hidden = true;
-    $('exit-code').value = '';
-    $('exit-code').blur();
     hold.prompt = false;
   }
 
   $('exit-cancel').addEventListener('click', closeExitPrompt);
 
-  $('exit-form').addEventListener('submit', async function (e) {
-    e.preventDefault();
-    var code = $('exit-code').value.trim();
-    var ok = code.length > 0 && (await checkCodeQuick(code)).ok;
+  $('exit-end').addEventListener('click', function () {
     closeExitPrompt();
-    if (!ok) return; // wrong code: close quietly
-    stopAnimation();
-    if (S && !S.exitLogged) {
-      logSession('exited_by_researcher');
-      S.exitLogged = true;
-      save(); // the session stays resumable from the current segment or screen
+    if (S) endSession();
+    showStart();
+  });
+
+  // The researcher ended this session on the Researcher page in another tab.
+  window.addEventListener('storage', function (e) {
+    if (e.key === 'sim.session' && e.newValue === null && S && inSession) {
+      closeExitPrompt();
+      stopAnimation();
+      S = null;
+      showStart();
     }
-    openPanel();
   });
 
   // ===================================================================
-  // "Session paused" screen (page opened with an unfinished session)
+  // "Continue where you left off" (page opened with an unfinished session)
   // ===================================================================
 
   function showPaused() {
     setInSession(true);
-    $('paused-code').value = '';
     $('paused-msg').textContent = '';
     show('paused');
   }
 
-  async function pausedCheck() {
-    var code = $('paused-code').value.trim();
-    if (!code) { $('paused-msg').textContent = 'Enter the researcher code.'; return false; }
-    var result = await checkCodeQuick(code);
-    $('paused-code').value = '';
-    $('paused-code').blur();
-    if (!result.ok) { $('paused-msg').textContent = result.msg; return false; }
-    $('paused-msg').textContent = '';
-    return true;
-  }
-
-  $('paused-form').addEventListener('submit', async function (e) {
-    e.preventDefault();
-    if (!(await pausedCheck())) return;
+  $('paused-continue').addEventListener('click', async function () {
     await dataReady;
-    if (!data) { $('paused-msg').textContent = 'The data file did not load, so the session cannot continue. Reload the page.'; return; }
+    if (!S || currentScreen !== 'paused') return; // ended or already continued
+    if (!data) { $('paused-msg').textContent = 'The stock data did not load. Reload the page to try again.'; return; }
     resumeSession();
   });
 
-  $('paused-end').addEventListener('click', async function () {
-    if (!(await pausedCheck())) return;
-    endSession();
-    openPanel();
-  });
-
   // ===================================================================
-  // Researcher gate and panel
+  // Start screen (navigation and footer visible)
   // ===================================================================
 
-  function showGate() {
-    setInSession(false);
-    $('gate-code').value = '';
-    $('gate-msg').textContent = '';
-    show('gate');
-    renderGateData();
-  }
-
-  function dataErrorText() {
-    return 'Could not load the data file (' + C.DATA_URL + '): ' + dataError + '. The simulation cannot start until this is fixed.';
-  }
-
-  function renderGateData() {
-    var box = $('gate-data-error');
-    box.hidden = !dataError;
-    box.textContent = dataError ? dataErrorText() : '';
-  }
-
-  $('gate-form').addEventListener('submit', async function (e) {
-    e.preventDefault();
-    var code = $('gate-code').value.trim();
-    if (!code) { $('gate-msg').textContent = 'Enter the researcher code.'; return; }
-    var button = $('gate-submit');
-    button.disabled = true;
-    $('gate-msg').textContent = '';
-    var result = await checkCodeOnline(code);
-    button.disabled = false;
-    if (!result.ok) { $('gate-msg').textContent = result.msg; return; }
-    $('gate-code').value = '';
-    $('gate-code').blur();
-    openPanel();
-  });
-
-  function openPanel() {
+  function showStart() {
     stopAnimation();
     setInSession(false);
-    show('panel');
-    renderPanel();
+    show('start');
+    renderStart();
   }
 
-  // Where an unfinished session is, in words.
-  function describeProgress(s) {
-    var who = (s.participantId ? 'Participant ' + s.participantId : 'No participant number yet') + ', version ' + s.version;
-    var where;
-    if (s.screen === 'consent') where = 'consent screen';
-    else if (s.screen === 'pid') where = 'participant number screen';
-    else if (s.screen === 'instructions') where = 'instructions';
-    else {
-      where = s.trialIndex === 0 ? 'practice stock' : 'stock ' + s.trialIndex + ' of 4';
-      if (s.screen === 'trade' && s.trial) where += ', decision ' + (s.trial.k + 1);
-      if (s.screen === 'rating') where += ', rating';
+  // Fill one status line, optionally ending with a link to the Researcher page.
+  function setLine(el, text, link) {
+    el.textContent = text;
+    if (text && link) {
+      var a = document.createElement('a');
+      a.href = 'researcher.html';
+      a.textContent = 'Open the Researcher page.';
+      el.appendChild(document.createTextNode(' '));
+      el.appendChild(a);
     }
-    return who + ' (' + where + ')';
+    el.hidden = !text;
   }
 
-  function renderPanel() {
-    // Data file
-    var warn = $('panel-data-warning');
-    if (dataError) {
-      warn.hidden = false;
-      warn.textContent = dataErrorText();
-      $('panel-data-status').textContent = 'Not loaded';
-      $('panel-data-status').className = 'bad';
-      $('panel-data-stocks').textContent = '';
-      $('panel-data-dates').textContent = '';
-      $('panel-data-generated').textContent = '';
-    } else if (!data) {
-      warn.hidden = true;
-      $('panel-data-status').textContent = 'Loading...';
-      $('panel-data-status').className = '';
-    } else {
-      warn.hidden = !data.placeholder;
-      warn.textContent = data.placeholder
-        ? 'Placeholder data: these are made-up prices. Build the real data file before collecting data.' : '';
-      $('panel-data-status').textContent = (data.placeholder ? 'Placeholder prices' : 'Real prices') + ' (feed: ' + data.feed + ')';
-      $('panel-data-stocks').textContent = data.stocks.map(function (s) { return s.id + ' ' + s.ticker; }).join(', ') +
-        '; practice ' + data.practice.ticker;
-      $('panel-data-status').className = data.placeholder ? 'bad' : 'ok';
-      $('panel-data-dates').textContent = (data.dates || []).join(', ');
-      $('panel-data-generated').textContent = data.generatedAt ? new Date(data.generatedAt).toLocaleString() : '';
-    }
-
-    // Version
-    var mode = versionMode();
-    $('panel-version-mode').value = mode;
-    $('panel-next-version').textContent = mode === 'auto'
-      ? 'Version ' + nextAutoVersion() + ' (auto)'
-      : 'Version ' + mode + ' (manual choice, does not rotate)';
-    var counts = { 1: 0, 2: 0, 3: 0, 4: 0 };
-    completedList().forEach(function (c) { if (counts[c.version] !== undefined) counts[c.version]++; });
-    $('panel-counts').textContent = [1, 2, 3, 4].map(function (v) { return 'V' + v + ': ' + counts[v]; }).join(' \u00b7 ');
-
-    // Session in progress?
-    var busy = Boolean(S);
-    $('panel-inprogress-row').hidden = !busy;
-    $('panel-inprogress').textContent = busy ? describeProgress(S) : '';
-    $('panel-resume').hidden = !busy;
-    $('panel-end').hidden = !busy;
-    $('panel-start').hidden = busy;
-    $('panel-start').disabled = !data;
-    $('panel-session-msg').textContent = busy
-      ? 'Resume the session in progress, or end it to start a new one.'
-      : (data ? '' : 'The data file must load before a session can start.');
-
-    renderSendStatus();
-  }
-
-  function renderSendStatus() {
-    if (currentScreen !== 'panel') return;
+  // Quiet status lines for the researcher under the Begin button.
+  function renderStart() {
+    if (currentScreen !== 'start') return;
+    $('start-begin').disabled = !data;
     var st = Store.status();
-    $('panel-pending').textContent = st.pending === 0
-      ? 'Nothing (all sent)'
-      : st.pending + (st.pending === 1 ? ' batch' : ' batches') + (st.sending ? ' (sending...)' : '');
-    $('panel-send-warning').hidden = !st.failing;
-    $('panel-send-error').textContent = st.lastError;
-    $('panel-storage-warning').hidden = !st.storageError;
-    $('panel-storage-warning').textContent = st.storageError + ' Download the CSV files now and check the iPad settings.';
-    var b = Store.backup();
-    $('panel-backup').textContent = 'Actions ' + b.Actions.length + ', Summary ' + b.Summary.length + ', Sessions ' + b.Sessions.length;
+    if (st.pending === 0) setLine($('start-upload'), 'All results uploaded.', false);
+    else setLine($('start-upload'), st.pending + (st.pending === 1 ? ' result' : ' results') + ' waiting to upload.', true);
+
+    var warn = '';
+    if (dataError) warn = 'The stock data did not load, so the study cannot start.';
+    else if (data && data.placeholder) warn = 'Practice data: prices are made up.';
+    if (st.storageError) warn += (warn ? ' ' : '') + 'This iPad cannot save results (Private Browsing may be on).';
+    setLine($('start-warn'), warn, Boolean(dataError || st.storageError));
   }
-  Store.onChange(renderSendStatus);
+  Store.onChange(renderStart);
 
-  $('panel-version-mode').addEventListener('change', function () {
-    rawSet('sim.versionMode', this.value);
-    renderPanel();
-  });
-
-  $('panel-start').addEventListener('click', function () {
-    if (S || !data) return;
+  $('start-begin').addEventListener('click', function () {
+    if (!data || S) return;
+    // A session left unfinished in another tab: offer to continue that one instead.
+    S = loadSavedSession();
+    if (S) { showPaused(); return; }
     startSession();
   });
-
-  $('panel-resume').addEventListener('click', function () {
-    if (!S || !data) return;
-    resumeSession();
-  });
-
-  $('panel-end').addEventListener('click', function () {
-    if (!S) return;
-    if (!window.confirm('End this session? It cannot be resumed afterwards. Data already saved is kept.')) return;
-    endSession();
-    renderPanel();
-  });
-
-  $('panel-retry').addEventListener('click', function () { Store.retryNow(); });
-
-  document.querySelectorAll('[data-download]').forEach(function (b) {
-    b.addEventListener('click', function () { Store.downloadSheet(b.getAttribute('data-download')); });
-  });
-
-  $('panel-lock').addEventListener('click', showGate);
 
   // ===================================================================
   // Start-up
@@ -965,12 +743,7 @@
 
   document.querySelectorAll('[data-start-cash]').forEach(function (el) { el.textContent = money(C.START_CASH).replace('.00', ''); });
 
-  S = Store.loadSession();
-  if (S && !(S.sessionId && C.LATIN_SQUARE[S.version])) {
-    // Unreadable saved state: drop it rather than get stuck.
-    Store.clearSession();
-    S = null;
-  }
+  S = loadSavedSession();
   if (S) showPaused();
-  else showGate();
+  else showStart();
 })();

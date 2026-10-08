@@ -10,39 +10,59 @@
 //                    or the older body { sheet, batchId, rows: [ {...}, ... ] }
 //   -> { ok: true, added } from Google, or { ok: false, error }
 //
-// Only the "Test" tab (used by test.html) is open to everyone. Everything
-// else needs the "x-researcher-hash" header: the SHA-256 of the researcher
-// code, which the simulation page keeps after the researcher unlocks it.
-// So people who only know the site address cannot add fake rows.
-
-import { checkResearcherHash } from '../lib/auth.js';
+// Participants send data without any code, so this function only accepts
+// the tabs and columns the site really writes (TABS below). Anything else
+// is refused, so nobody can add other tabs or columns to the sheet.
 
 const MAX_BYTES = 1000000;    // about 1 MB; one stock's data is far smaller
-const MAX_SHEETS = 20;
-const SHEET_NAME = /^[A-Za-z0-9 _-]{1,50}$/; // letters, digits, spaces, _ and -
-const COLUMN_NAME = /^[A-Za-z0-9_ ]{1,60}$/; // letters, digits, _ and spaces
-const OPEN_SHEET = 'Test';                   // test.html saves here without the code
 
-// Each row must be a plain { column: value } object with simple column names.
-// Returns an error message, or '' when the rows are fine.
-function checkRows(rows, where) {
-  if (!Array.isArray(rows) || !rows.every((row) => row !== null && typeof row === 'object' && !Array.isArray(row))) {
-    return `"${where}" must be an array of row objects`;
-  }
-  for (const row of rows) {
-    for (const key of Object.keys(row)) {
-      if (!COLUMN_NAME.test(key)) return `Bad column name "${key.slice(0, 60)}" (use letters, digits, _ or spaces, at most 60 characters)`;
-    }
-  }
-  return '';
+// The only tabs, with exactly these columns (docs/EXPERIMENT.md section 7).
+// "Test" is the connection test page (test.html).
+const TABS = {
+  Actions: ['participant_id', 'version', 'session_id', 'position', 'stock', 'stock_slot', 'timeframe',
+    'checkpoint', 'action', 'shares', 'price', 'cash', 'shares_held', 'portfolio_value', 'rating',
+    'decision_ms', 'timestamp'],
+  Summary: ['participant_id', 'version', 'session_id', 'position', 'stock', 'stock_slot', 'timeframe',
+    'volatility_rating', 'final_price', 'final_cash', 'final_shares', 'final_value',
+    'final_pct_in_stock', 'return_pct', 'trades', 'timestamp'],
+  Sessions: ['participant_id', 'version', 'version_mode', 'session_id', 'event', 'timestamp', 'device'],
+  Test: ['timestamp', 'message', 'screen', 'device'],
+  Contact: ['timestamp', 'name', 'email', 'message'], // contact.html
+};
+
+// A name from the request, shortened and safe to put in an error message.
+function shown(name) {
+  return JSON.stringify(String(name).slice(0, 60));
 }
 
-// Returns an error message, or '' when the sheet name is fine.
-function checkSheetName(name) {
-  if (typeof name !== 'string' || !SHEET_NAME.test(name)) return `Bad sheet name "${String(name).slice(0, 60)}" (use letters, digits, spaces, _ or -, at most 50 characters)`;
-  // Sheets tab names ignore upper/lower case, so "_Batches" is the same tab.
-  if (name.toLowerCase() === '_batches') return 'The sheet name "_batches" is reserved';
-  return '';
+// Checks the rows for one tab. Every row must have exactly the tab's
+// columns, and each value must be text, a number, true/false or empty.
+// Returns { rows } (each row with its columns in the standard order) or { error }.
+function checkRows(tab, rows) {
+  if (!Object.prototype.hasOwnProperty.call(TABS, tab)) {
+    return { error: `Unknown tab ${shown(tab)}. Allowed tabs: ${Object.keys(TABS).join(', ')}` };
+  }
+  const columns = TABS[tab];
+  if (!Array.isArray(rows) || !rows.every((row) => row !== null && typeof row === 'object' && !Array.isArray(row))) {
+    return { error: `The rows for tab "${tab}" must be a list of row objects` };
+  }
+  const clean = [];
+  for (const row of rows) {
+    for (const key of Object.keys(row)) {
+      if (!columns.includes(key)) return { error: `Tab "${tab}" has no column ${shown(key)}` };
+    }
+    const out = {};
+    for (const column of columns) {
+      if (!Object.prototype.hasOwnProperty.call(row, column)) return { error: `A row for tab "${tab}" is missing the column "${column}"` };
+      const value = row[column];
+      if (value !== null && !['string', 'number', 'boolean'].includes(typeof value)) {
+        return { error: `Tab "${tab}", column "${column}": a value must be text, a number or empty` };
+      }
+      out[column] = value;
+    }
+    clean.push(out);
+  }
+  return { rows: clean };
 }
 
 // Why fetch failed, in words. Never err.message: it can contain SHEETS_URL.
@@ -59,13 +79,13 @@ function fetchFailReason(err) {
 // Checks the body and returns { payload } (what is sent to Google) or { error }.
 function checkBody(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
-    return { error: 'Expected JSON with a "rows" array' };
+    return { error: 'Expected JSON like { "batchId": "...", "sheets": { "Actions": [ ... ] } }' };
   }
   if (body.batchId !== undefined && (typeof body.batchId !== 'string' || body.batchId.length > 100)) {
     return { error: '"batchId" must be text (at most 100 characters)' };
   }
 
-  // New format: several sheets in one request.
+  // New format: several tabs in one request.
   if (body.sheets !== undefined) {
     const sheets = body.sheets;
     if (!sheets || typeof sheets !== 'object' || Array.isArray(sheets)) {
@@ -73,25 +93,23 @@ function checkBody(body) {
     }
     const names = Object.keys(sheets);
     if (names.length === 0) return { error: '"sheets" is empty' };
-    if (names.length > MAX_SHEETS) return { error: `Too many sheets in one request (at most ${MAX_SHEETS})` };
+    const clean = {};
     for (const name of names) {
-      const problem = checkSheetName(name) || checkRows(sheets[name], 'sheets.' + name);
-      if (problem) return { error: problem };
+      const { rows, error } = checkRows(name, sheets[name]);
+      if (error) return { error };
+      clean[name] = rows;
     }
-    return { payload: { batchId: body.batchId, sheets } };
+    return { payload: { batchId: body.batchId, sheets: clean } };
   }
 
-  // Older format: one sheet.
+  // Older format: one tab (used by test.html).
   if (!Array.isArray(body.rows)) {
-    return { error: 'Expected JSON with a "rows" array' };
+    return { error: 'Expected JSON with a "sheets" object or a "rows" array' };
   }
-  const rowProblem = checkRows(body.rows, 'rows');
-  if (rowProblem) return { error: rowProblem };
-  if (body.sheet !== undefined) {
-    const problem = checkSheetName(body.sheet);
-    if (problem) return { error: problem };
-  }
-  return { payload: { batchId: body.batchId, sheet: body.sheet, rows: body.rows } };
+  if (body.sheet === undefined) return { error: 'Say which tab the rows are for ("sheet")' };
+  const { rows, error } = checkRows(body.sheet, body.rows);
+  if (error) return { error };
+  return { payload: { batchId: body.batchId, sheet: body.sheet, rows } };
 }
 
 export default async function handler(req, res) {
@@ -124,20 +142,6 @@ export default async function handler(req, res) {
 
   const { payload, error } = checkBody(body);
   if (error) return res.status(400).json({ ok: false, error });
-
-  // Experiment data needs the researcher code's hash (see the top of this file).
-  if (payload.sheet !== OPEN_SHEET) {
-    const auth = checkResearcherHash(req.headers && req.headers['x-researcher-hash']);
-    if (auth === 'missing') {
-      return res.status(500).json({ ok: false, error: 'RESEARCHER_CODE is not set in Vercel' });
-    }
-    if (auth !== 'ok') {
-      return res.status(401).json({
-        ok: false,
-        error: 'Not allowed to save. Lock the researcher screen, unlock it with the researcher code, then tap Retry sending now.',
-      });
-    }
-  }
 
   const text = JSON.stringify(payload);
   if (Buffer.byteLength(text) > MAX_BYTES) return res.status(413).json(tooBig);

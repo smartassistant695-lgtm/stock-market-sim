@@ -7,120 +7,47 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
   <title>Simulation - Stock Chart Study</title>
+  <link rel="icon" href="data:,">
+  <link rel="preload" href="fonts/cormorant-garamond/cormorant-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/sim.css">
 </head>
 <body class="site">
-  <nav class="nav"><span class="nav-title">Stock Chart Study</span><a class="nav-tab" href="index.html">Home</a><a class="nav-tab" href="simulation.html" aria-current="page">Simulation</a><a class="nav-tab" href="about.html">About Us</a><a class="nav-tab" href="market.html">Market Data</a></nav>
+  <nav class="nav"><span class="nav-title">Noah &amp; Jojo</span><a class="nav-tab" href="index.html">Home</a><a class="nav-tab" href="simulation.html" aria-current="page">Simulation</a><a class="nav-tab" href="about.html">About Us</a><a class="nav-tab" href="market.html">Market Data</a><a class="nav-tab" href="contact.html">Contact Us</a></nav>
 
   <main id="app">
 
-    <!-- ============ Researcher screens (navigation visible) ============ -->
+    <!-- ============ Start screen (navigation and footer visible) ============ -->
 
-    <!-- Researcher code gate -->
-    <section id="screen-gate" class="screen" hidden>
-      <div class="sim-page">
-        <h1 class="sim-h1">Simulation</h1>
-        <p class="note">For the researcher. Enter the researcher code to open the session controls.</p>
-        <div id="gate-data-error" class="warn-box" hidden></div>
-        <form id="gate-form" class="panel" autocomplete="off">
-          <h2>Researcher code</h2>
-          <div class="form-body">
-            <input id="gate-code" class="text-input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Researcher code">
-            <button id="gate-submit" class="btn" type="submit">Unlock</button>
-          </div>
-          <p id="gate-msg" class="form-msg bad" aria-live="polite"></p>
-        </form>
-      </div>
-    </section>
-
-    <!-- Researcher panel -->
-    <section id="screen-panel" class="screen" hidden>
-      <div class="sim-page sim-page-wide">
-        <div class="panel-head">
-          <h1 class="sim-h1">Session controls</h1>
-          <button id="panel-lock" class="btn btn-secondary" type="button">Lock</button>
-        </div>
-
-        <div id="panel-data-warning" class="warn-box" hidden></div>
-        <div id="panel-storage-warning" class="warn-box" hidden></div>
-        <div id="panel-send-warning" class="warn-box" hidden>
-          <p><strong>Sending to Google Sheets failed.</strong> The data is still saved on this iPad and will be sent again automatically.</p>
-          <p>Error: <span id="panel-send-error"></span></p>
-          <button id="panel-retry" class="btn" type="button">Retry sending now</button>
-        </div>
-
-        <div class="panel-grid">
-          <div class="panel-col">
-            <div class="panel">
-              <h2>Session</h2>
-              <div class="row">
-                <label class="label" for="panel-version-mode">Version</label>
-                <select id="panel-version-mode" class="select">
-                  <option value="auto">Auto (rotates 1 to 4)</option>
-                  <option value="1">Version 1</option>
-                  <option value="2">Version 2</option>
-                  <option value="3">Version 3</option>
-                  <option value="4">Version 4</option>
-                </select>
-              </div>
-              <div class="row"><span class="label">Next session uses</span><span id="panel-next-version" class="num"></span></div>
-              <div class="row"><span class="label">Completed on this iPad</span><span id="panel-counts" class="num"></span></div>
-              <div id="panel-inprogress-row" class="row" hidden><span class="label">In progress</span><span id="panel-inprogress" class="num"></span></div>
-              <div class="actions btn-row">
-                <button id="panel-start" class="btn" type="button">Start new session</button>
-                <button id="panel-resume" class="btn" type="button" hidden>Resume session</button>
-                <button id="panel-end" class="btn btn-secondary" type="button" hidden>End session</button>
-              </div>
-              <p id="panel-session-msg" class="form-msg note"></p>
-            </div>
-          </div>
-          <div class="panel-col">
-            <div class="panel">
-              <h2>Data file</h2>
-              <div class="row"><span class="label">Status</span><span id="panel-data-status">Loading...</span></div>
-              <div class="row"><span class="label">Stocks</span><span id="panel-data-stocks"></span></div>
-              <div class="row"><span class="label">Trading days</span><span id="panel-data-dates" class="num"></span></div>
-              <div class="row"><span class="label">Created</span><span id="panel-data-generated" class="num"></span></div>
-            </div>
-
-            <div class="panel">
-              <h2>Saved data</h2>
-              <div class="row"><span class="label">Waiting to send</span><span id="panel-pending" class="num"></span></div>
-              <div class="row"><span class="label">Rows saved on this iPad</span><span id="panel-backup" class="num"></span></div>
-              <div class="actions btn-row">
-                <button class="btn btn-secondary" type="button" data-download="Actions">Actions CSV</button>
-                <button class="btn btn-secondary" type="button" data-download="Summary">Summary CSV</button>
-                <button class="btn btn-secondary" type="button" data-download="Sessions">Sessions CSV</button>
-              </div>
-              <p class="note form-msg">CSV files are copies of everything saved on this iPad. Google Sheets is the main copy.</p>
-            </div>
-          </div>
+    <section id="screen-start" class="screen start" hidden>
+      <div class="start-inner">
+        <h1 class="start-h1">Stock Trading Study</h1>
+        <p class="start-lede">It takes about ten minutes and uses virtual money, so nothing real is at stake. Please use the iPad in landscape.</p>
+        <button id="start-begin" class="site-btn start-btn" type="button" disabled>Begin</button>
+        <!-- Quiet status lines for the researcher (filled in by experiment.js). -->
+        <div class="start-notes" aria-live="polite">
+          <p id="start-upload" class="start-note"></p>
+          <p id="start-warn" class="start-note start-note-bad" hidden></p>
         </div>
       </div>
     </section>
 
-    <!-- ============ Participant screens (navigation hidden) ============ -->
+    <!-- ============ Participant screens (navigation and footer hidden) ============ -->
 
-    <!-- Session paused (after a refresh or closed tab) -->
-    <section id="screen-paused" class="screen screen-center screen-top" hidden>
+    <!-- Page opened again with an unfinished session (after a refresh or a closed tab) -->
+    <section id="screen-paused" class="screen screen-center calm" hidden>
       <div class="card">
-        <h1 class="sim-h1">Session paused</h1>
-        <p>Please wait for the researcher.</p>
-        <form id="paused-form" autocomplete="off">
-          <label class="field-label" for="paused-code">Researcher code</label>
-          <input id="paused-code" class="text-input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
-          <div class="btn-row">
-            <button id="paused-resume" class="btn" type="submit">Resume</button>
-            <button id="paused-end" class="btn btn-secondary" type="button">End session</button>
-          </div>
-          <p id="paused-msg" class="form-msg bad" aria-live="polite"></p>
-        </form>
+        <h1 class="sim-h1">Continue where you left off</h1>
+        <p>Tap Continue to go back to where you stopped.</p>
+        <div class="btn-row">
+          <button id="paused-continue" class="site-btn" type="button">Continue</button>
+        </div>
+        <p id="paused-msg" class="form-msg bad" aria-live="polite"></p>
       </div>
     </section>
 
     <!-- Consent -->
-    <section id="screen-consent" class="screen screen-center" hidden>
+    <section id="screen-consent" class="screen screen-center calm" hidden>
       <div class="card card-wide">
         <h1 class="sim-h1">Consent to take part</h1>
         <div class="text-scroll">
@@ -132,15 +59,16 @@
           <p>Your answers are saved with a participant number, not your name.</p>
           <!-- EDIT CONSENT TEXT ABOVE -->
         </div>
+        <p class="scroll-more">Scroll to read the rest.</p>
         <div class="btn-row">
-          <button id="consent-yes" class="btn" type="button">I agree</button>
-          <button id="consent-no" class="btn btn-secondary" type="button">I do not agree</button>
+          <button id="consent-yes" class="site-btn" type="button">I agree</button>
+          <button id="consent-no" class="site-btn site-btn-outline" type="button">I do not agree</button>
         </div>
       </div>
     </section>
 
     <!-- Consent declined -->
-    <section id="screen-declined" class="screen screen-center" hidden>
+    <section id="screen-declined" class="screen screen-center calm" hidden>
       <div class="card">
         <h1 class="sim-h1">Thank you</h1>
         <p>You chose not to take part. Please hand the iPad back to the researcher.</p>
@@ -148,14 +76,14 @@
     </section>
 
     <!-- Participant ID -->
-    <section id="screen-pid" class="screen screen-center screen-top" hidden>
+    <section id="screen-pid" class="screen screen-center screen-top calm" hidden>
       <div class="card">
         <h1 class="sim-h1">Participant number</h1>
         <form id="pid-form" autocomplete="off">
           <label class="field-label" for="pid-input">Enter the participant number the researcher gave you.</label>
           <input id="pid-input" class="text-input" type="text" maxlength="20" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false">
           <div class="btn-row">
-            <button class="btn" type="submit">Continue</button>
+            <button class="site-btn" type="submit">Continue</button>
           </div>
           <p id="pid-msg" class="form-msg bad" aria-live="polite"></p>
         </form>
@@ -163,7 +91,7 @@
     </section>
 
     <!-- Instructions -->
-    <section id="screen-instructions" class="screen screen-center" hidden>
+    <section id="screen-instructions" class="screen screen-center calm" hidden>
       <div class="card card-wide">
         <h1 class="sim-h1">How it works</h1>
         <div class="text-scroll">
@@ -177,19 +105,20 @@
             <li>Try to end with as much money as you can.</li>
           </ul>
         </div>
+        <p class="scroll-more">Scroll to read the rest.</p>
         <div class="btn-row">
-          <button id="instructions-next" class="btn" type="button">Continue</button>
+          <button id="instructions-next" class="site-btn" type="button">Continue</button>
         </div>
       </div>
     </section>
 
     <!-- Before each stock -->
-    <section id="screen-intro" class="screen screen-center" hidden>
+    <section id="screen-intro" class="screen screen-center calm" hidden>
       <div class="card">
         <h1 id="intro-title" class="sim-h1"></h1>
         <p id="intro-note"></p>
         <div class="btn-row">
-          <button id="intro-start" class="btn" type="button">Start</button>
+          <button id="intro-start" class="site-btn" type="button">Start</button>
         </div>
       </div>
     </section>
@@ -274,7 +203,7 @@
     </section>
 
     <!-- Thank you -->
-    <section id="screen-thanks" class="screen screen-center" hidden>
+    <section id="screen-thanks" class="screen screen-center calm" hidden>
       <div class="card">
         <h1 class="sim-h1">Thank you</h1>
         <p>You have finished the study. Please hand the iPad back to the researcher.</p>
@@ -284,26 +213,27 @@
 
   <!-- Hidden researcher exit: press and hold the top-left corner for 3 seconds. -->
   <div id="exit-zone" class="exit-zone" aria-hidden="true"></div>
-  <div id="exit-prompt" class="overlay screen-top" hidden>
-    <form id="exit-form" class="card" autocomplete="off">
-      <label class="field-label" for="exit-code">Researcher code</label>
-      <input id="exit-code" class="text-input" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
+  <div id="exit-prompt" class="exit-overlay calm" role="dialog" aria-modal="true" aria-labelledby="exit-title" hidden>
+    <div class="exit-box">
+      <h2 id="exit-title" class="exit-title">End this session?</h2>
+      <p class="exit-text">Stocks already finished stay saved. The rest of this session is discarded.</p>
       <div class="btn-row">
-        <button class="btn" type="submit">Exit to controls</button>
-        <button id="exit-cancel" class="btn btn-secondary" type="button">Cancel</button>
+        <button id="exit-end" class="site-btn" type="button">End session</button>
+        <button id="exit-cancel" class="site-btn site-btn-outline" type="button">Cancel</button>
       </div>
-    </form>
+    </div>
   </div>
 
   <!-- Shown by CSS when the iPad is held upright. -->
   <div id="rotate" class="rotate-overlay"><p>Please rotate your iPad to landscape.</p></div>
-
-  <footer class="site-footer">Charts by <a href="https://www.tradingview.com/" target="_blank" rel="noopener">TradingView Lightweight Charts™</a>, Copyright (c) 2025 TradingView, Inc.</footer>
 
   <script src="vendor/lightweight-charts/lightweight-charts.standalone.production.js"></script>
   <script src="js/config.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/sim-chart.js"></script>
   <script src="js/experiment.js"></script>
+
+  <footer id="site-footer" data-page="Simulation"></footer>
+  <script src="js/footer.js"></script>
 </body>
 </html>

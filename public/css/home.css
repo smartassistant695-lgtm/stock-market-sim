@@ -1,0 +1,145 @@
+/* Home page: the full-screen photo with the title panel, then a short text about the study.
+   Shared pieces (navigation, buttons, footer) are in style.css. */
+
+/* ==== EDIT PHOTO POSITION ====
+   Which part of the photo stays in view when the screen crops it.
+   First number: left (0%) to right (100%). Second number: top (0%) to bottom (100%).
+   "50% 50%" is the center. */
+.hero { --photo-position: 50% 45%; }
+
+/* ---- First screen: the photo ---- */
+
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;   /* the title panel sits in the lower part of the screen */
+  min-height: 100vh;           /* older browsers */
+  min-height: 100svh;          /* the visible screen height, with Safari's bars showing */
+  padding: 112px var(--side) clamp(64px, 13vh, 136px);
+  background-color: var(--ink); /* shown while the photo loads, and if it is missing */
+  background-image: url("../images/hero.jpg");
+  background-size: cover;
+  background-position: var(--photo-position);
+  color: #ffffff;
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+/* Flat dark layer over the photo so the white text stays readable. */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* No photo yet (set by the small script in index.html): plain dark background. */
+.no-photo .hero { background-image: none; }
+.no-photo .hero::before { display: none; }
+
+/* ---- The glass panel with the title ---- */
+
+.hero-panel {
+  position: relative;          /* above the dark layer */
+  align-self: flex-start;      /* as wide as its text, no wider */
+  max-width: 100%;
+  padding: 40px 44px 44px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 2px;
+  background: rgba(20, 20, 20, 0.5); /* used when the browser cannot blur */
+}
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .hero-panel {
+    background: rgba(20, 20, 20, 0.28);
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
+    backdrop-filter: blur(12px) saturate(120%);
+  }
+}
+
+.hero-label {
+  margin: 0 0 20px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.hero-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(40px, 26px + 3vw, 66px);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+}
+.hero-text {
+  max-width: 30em;
+  margin: 22px 0 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 17px;
+  line-height: 1.47;
+  letter-spacing: -0.01em;
+}
+.hero-buttons { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+.hero-buttons .site-btn { flex: 0 1 auto; }
+
+/* On the photo: the main button is white, the second one is outlined in white. */
+.hero .site-btn { border-color: #ffffff; background: #ffffff; color: var(--ink); }
+.hero .site-btn:active { background: #e8e8ed; }
+.hero .site-btn-outline { border-color: rgba(255, 255, 255, 0.72); background: transparent; color: #ffffff; }
+.hero .site-btn-outline:active { background: rgba(255, 255, 255, 0.12); }
+@media (hover: hover) {
+  .hero .site-btn:hover { background: #f0f0f2; }
+  .hero .site-btn-outline:hover { background: rgba(255, 255, 255, 0.1); }
+}
+
+/* Photo credit (bottom right). The note about the missing photo takes its place. */
+.hero-credit,
+.hero-missing {
+  position: absolute;
+  right: var(--side);
+  bottom: 18px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+.hero-missing { display: none; color: rgba(255, 255, 255, 0.55); }
+.no-photo .hero-missing { display: block; }
+.no-photo .hero-credit { display: none; }
+
+/* ---- Below the photo: a few sentences about the study ---- */
+
+.study {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  gap: 18px 40px;
+  padding: clamp(72px, 10vw, 128px) var(--side) clamp(80px, 11vw, 144px);
+}
+.study .eyebrow { padding-top: 12px; }
+.study-text {
+  max-width: 21em;
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: clamp(26px, 2.8vw, 34px);
+  font-weight: 500;
+  line-height: 1.24;
+  letter-spacing: -0.005em;
+}
+
+/* ---- iPad portrait ---- */
+@media (max-width: 899px) {
+  .study { grid-template-columns: minmax(0, 1fr); }
+  .study .eyebrow { padding-top: 0; }
+}
+
+/* ---- Phones ---- */
+@media (max-width: 640px) {
+  .hero { padding-top: 88px; padding-bottom: 64px; }
+  .hero-panel { padding: 28px 24px 28px; }
+  .hero-label { margin-bottom: 16px; font-size: 11px; }
+  .hero-text { font-size: 16px; }
+  .hero-buttons { margin-top: 26px; }
+  .hero-buttons .site-btn { flex: 1 1 auto; }
+}

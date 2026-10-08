@@ -1,0 +1,114 @@
+/* Researcher page (researcher.html). Uses the site design from style.css
+   (.page-title, .site-btn, .segmented, the --ink and --hairline colors):
+   groups of rows separated by 1px hairlines, no shadows. */
+
+.r {
+  padding: 0 var(--side) 96px;
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+.r a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Title on the left, "Lock this iPad" on the right. */
+.r-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px 32px;
+}
+
+.r-lock-box { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.r-unlocked-until { margin: 0; color: var(--ink-3); font-size: 12px; }
+.r-unlocked-until:empty { display: none; }
+
+/* ---------- Lock screen ---------- */
+
+.r-form { max-width: 440px; padding-bottom: 40px; }
+.r-field-label { display: block; margin-bottom: 8px; color: var(--ink-2); font-size: 15px; }
+.r-form-row { display: flex; gap: 10px; }
+.r-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--ink-4);
+  border-radius: 2px;
+  background: #ffffff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 17px; /* 16px or more stops iPad Safari zooming in */
+  -webkit-appearance: none;
+  appearance: none;
+}
+.r-input:focus { outline: none; border-color: var(--ink); }
+.r-msg { min-height: 1.5em; margin: 10px 0 0; color: #b4202c; font-size: 15px; }
+
+/* ---------- Red warning boxes ---------- */
+
+.r-warn {
+  margin: 0 0 28px;
+  padding: 16px 18px;
+  border: 1px solid var(--down);
+  border-radius: 2px;
+  background: #fdf0f1;
+  color: #8e1520;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.r-warn p { margin: 0 0 6px; }
+.r-warn .site-btn { margin-top: 10px; }
+.r-warn-title { font-weight: 600; }
+
+/* ---------- Groups: title on the left, rows on the right ---------- */
+
+.r-group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2.6fr);
+  gap: 0 48px;
+  padding: 24px 0 36px;
+  border-top: 1px solid var(--hairline);
+}
+.r-h2 { margin: 0; padding-top: 11px; font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }
+.r-rows { grid-column: 2; }
+.r-note { grid-column: 2; margin: 12px 0 0; color: var(--ink-3); font-size: 13px; line-height: 1.45; }
+
+.r-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 24px;
+  min-height: 44px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+.r-rows > .r-row:last-child,
+.r-rows > div:last-child > .r-row:last-child { border-bottom: 0; }
+.r-label { color: var(--ink); }
+.r-value { color: var(--ink-3); text-align: right; }
+.r-value.ok { color: var(--up); }
+.r-value.bad { color: #b4202c; }
+.r-row-control { align-items: center; padding: 6px 0; }
+.r-row-buttons { justify-content: flex-start; gap: 10px; padding-top: 16px; }
+.r-row-buttons .site-btn { min-height: 44px; padding: 0 20px; }
+
+/* ---------- iPad portrait and phones ---------- */
+
+@media (max-width: 760px) {
+  .r-group { grid-template-columns: minmax(0, 1fr); }
+  .r-h2 { padding: 0 0 6px; }
+  .r-rows,
+  .r-note { grid-column: 1; }
+}
+@media (max-width: 640px) {
+  .r-lock-box { align-items: flex-start; }
+  .r-form-row { flex-direction: column; }
+  .r-value { text-align: left; }
+  .r-row-control .segmented { flex: 1 1 100%; }
+  .r-row-control .segmented button { flex: 1 1 0; min-width: 0; }
+  .r-row-buttons .site-btn { flex: 1 1 100%; } /* the CSV buttons stack, full width */
+}
