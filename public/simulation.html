@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="css/sim.css">
 </head>
 <body class="site">
-  <nav class="nav"><span class="nav-title">Noah &amp; Jojo</span><a class="nav-tab" href="index.html">Home</a><a class="nav-tab" href="simulation.html" aria-current="page">Simulation</a><a class="nav-tab" href="about.html">About Us</a><a class="nav-tab" href="market.html">Market Data</a><a class="nav-tab" href="contact.html">Contact Us</a></nav>
+  <nav class="nav"><span class="nav-title">Noah &amp; Jojo</span><a class="nav-tab" href="index.html">Home</a><a class="nav-tab" href="simulation.html" aria-current="page">Simulation</a><a class="nav-tab" href="about.html">About Us</a><a class="nav-tab" href="market.html">Market Data</a><a class="nav-tab" href="options.html">Options<span class="nav-long">&nbsp;Playground</span></a><a class="nav-tab" href="contact.html">Contact Us</a></nav>
 
   <main id="app">
 
@@ -56,7 +56,7 @@
           <p>This study is about how people read stock charts. You will trade four made-up stocks with
             virtual money. No real money is used and nothing you do here affects you outside the study.</p>
           <p>It takes about 10 minutes. You can stop at any time by telling the researcher.</p>
-          <p>Your answers are saved with a participant number, not your name.</p>
+          <p>Your answers are saved with a participant code, not your name.</p>
           <!-- EDIT CONSENT TEXT ABOVE -->
         </div>
         <p class="scroll-more">Scroll to read the rest.</p>
@@ -71,22 +71,7 @@
     <section id="screen-declined" class="screen screen-center calm" hidden>
       <div class="card">
         <h1 class="sim-h1">Thank you</h1>
-        <p>You chose not to take part. Please hand the iPad back to the researcher.</p>
-      </div>
-    </section>
-
-    <!-- Participant ID -->
-    <section id="screen-pid" class="screen screen-center screen-top calm" hidden>
-      <div class="card">
-        <h1 class="sim-h1">Participant number</h1>
-        <form id="pid-form" autocomplete="off">
-          <label class="field-label" for="pid-input">Enter the participant number the researcher gave you.</label>
-          <input id="pid-input" class="text-input" type="text" maxlength="20" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false">
-          <div class="btn-row">
-            <button class="site-btn" type="submit">Continue</button>
-          </div>
-          <p id="pid-msg" class="form-msg bad" aria-live="polite"></p>
-        </form>
+        <p>You chose not to take part. Thank you for your time.</p>
       </div>
     </section>
 
@@ -95,19 +80,46 @@
       <div class="card card-wide">
         <h1 class="sim-h1">How it works</h1>
         <div class="text-scroll">
-          <ul class="steps">
-            <li>You will trade one practice stock and then four stocks. The companies are made up.</li>
+          <!-- The same list is shown again in the Directions box (experiment.js copies it). -->
+          <ul id="instructions-steps" class="steps">
+            <li>You will trade one practice stock and then <span data-stock-count>four</span> stocks.
+              The companies are made up. <span data-data-source>Their price movements come from real stock market data.</span></li>
             <li>For each stock you start with <span class="num" data-start-cash>$10,000</span> of virtual money and no shares.</li>
             <li>The chart shows one day of price history. Then the price starts moving.</li>
-            <li>The chart stops several times. Each time, enter a number of shares on the keypad and tap
-              <strong>Buy</strong> or <strong>Sell</strong>, or tap <strong>Hold</strong> to do nothing.</li>
+            <li>The chart stops <span class="num" data-checkpoints>4</span> times for each of the <span data-stock-count>four</span> stocks
+              (<span class="num" data-practice-checkpoints>2</span> times in the practice). Each time, enter a number of shares
+              on the keypad and tap <strong>Buy</strong> or <strong>Sell</strong>, or tap <strong>Hold</strong> to do nothing.</li>
+            <li>Optional: set a stop loss or take profit to sell automatically if the price reaches a level you choose.</li>
             <li>After each stock you will answer one question about it.</li>
             <li>Try to end with as much money as you can.</li>
+            <li>Tap <strong>Directions</strong> at any time to see these steps again.</li>
           </ul>
         </div>
         <p class="scroll-more">Scroll to read the rest.</p>
         <div class="btn-row">
           <button id="instructions-next" class="site-btn" type="button">Continue</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- How to read a candle (after the instructions, before the practice stock).
+         The same content is shown again in the Directions box (experiment.js copies it). -->
+    <section id="screen-lesson" class="screen screen-center calm" hidden>
+      <div class="card card-wide">
+        <h1 class="sim-h1">Reading the chart</h1>
+        <div class="text-scroll">
+          <div id="lesson-content" class="lesson">
+            <!-- The candle picture is drawn by experiment.js (candleFigure). -->
+            <div class="candle-figure" data-candle-figure></div>
+            <p class="lesson-text">Each candle shows the price over a period of time: the top of the wick is the
+              highest price and the bottom is the lowest. Green means the price ended higher than it started,
+              and red means it ended lower. The label in the top corner of the chart shows how much time each
+              candle covers.</p>
+          </div>
+        </div>
+        <p class="scroll-more">Scroll to read the rest.</p>
+        <div class="btn-row">
+          <button id="lesson-next" class="site-btn" type="button">Continue</button>
         </div>
       </div>
     </section>
@@ -119,6 +131,7 @@
         <p id="intro-note"></p>
         <div class="btn-row">
           <button id="intro-start" class="site-btn" type="button">Start</button>
+          <button class="site-btn site-btn-outline" type="button" data-directions>Directions</button>
         </div>
       </div>
     </section>
@@ -134,6 +147,7 @@
           <div class="side-stock">
             <span id="t-ticker" class="t-ticker"></span>
             <span id="t-name" class="t-name"></span>
+            <button id="t-directions" class="btn btn-secondary side-btn" type="button" data-directions>Directions</button>
           </div>
           <div class="side-price">
             <span id="t-price" class="t-price num"></span>
@@ -143,6 +157,8 @@
             <div class="kv"><span class="label">Cash</span><span id="t-cash" class="num"></span></div>
             <div class="kv"><span class="label">Shares held</span><span id="t-held" class="num"></span></div>
             <div class="kv"><span class="label">Total value</span><span id="t-value" class="num"></span></div>
+            <div class="kv"><span class="label">Stop loss</span><span id="t-stop" class="num"></span></div>
+            <div class="kv"><span class="label">Take profit</span><span id="t-target" class="num"></span></div>
           </div>
           <div id="t-status" class="t-status"></div>
           <div class="side-entry">
@@ -151,25 +167,48 @@
               <span id="t-entry" class="entry-value num"></span>
             </div>
             <div id="t-max" class="t-max num"></div>
-            <div class="keypad" id="keypad">
-              <button class="key" type="button" data-key="1">1</button>
-              <button class="key" type="button" data-key="2">2</button>
-              <button class="key" type="button" data-key="3">3</button>
-              <button class="key" type="button" data-key="4">4</button>
-              <button class="key" type="button" data-key="5">5</button>
-              <button class="key" type="button" data-key="6">6</button>
-              <button class="key" type="button" data-key="7">7</button>
-              <button class="key" type="button" data-key="8">8</button>
-              <button class="key" type="button" data-key="9">9</button>
-              <button class="key key-word" type="button" data-key="clear">Clear</button>
-              <button class="key" type="button" data-key="0">0</button>
-              <button class="key key-word" type="button" data-key="delete">Delete</button>
+            <!-- The keypad, or (after tapping "Stop loss / Take profit") the stop loss and
+                 take profit steppers in the same place, so the panel never changes height. -->
+            <div class="pad-area">
+              <div class="keypad" id="keypad">
+                <button class="key" type="button" data-key="1">1</button>
+                <button class="key" type="button" data-key="2">2</button>
+                <button class="key" type="button" data-key="3">3</button>
+                <button class="key" type="button" data-key="4">4</button>
+                <button class="key" type="button" data-key="5">5</button>
+                <button class="key" type="button" data-key="6">6</button>
+                <button class="key" type="button" data-key="7">7</button>
+                <button class="key" type="button" data-key="8">8</button>
+                <button class="key" type="button" data-key="9">9</button>
+                <button class="key key-word" type="button" data-key="clear">Clear</button>
+                <button class="key" type="button" data-key="0">0</button>
+                <button class="key key-word" type="button" data-key="delete">Delete</button>
+              </div>
+              <div id="orders" class="orders" hidden>
+                <div class="order" data-order="stop">
+                  <div class="stepper">
+                    <button class="key step" type="button" data-step="-1" aria-label="Lower stop loss">&minus;</button>
+                    <div class="step-value"><span class="step-label">Stop loss</span><span id="stop-choice" class="step-choice num"></span></div>
+                    <button class="key step" type="button" data-step="1" aria-label="Raise stop loss">+</button>
+                  </div>
+                  <p id="stop-result" class="order-result num"></p>
+                </div>
+                <div class="order" data-order="target">
+                  <div class="stepper">
+                    <button class="key step" type="button" data-step="-1" aria-label="Lower take profit">&minus;</button>
+                    <div class="step-value"><span class="step-label">Take profit</span><span id="target-choice" class="step-choice num"></span></div>
+                    <button class="key step" type="button" data-step="1" aria-label="Raise take profit">+</button>
+                  </div>
+                  <p id="target-result" class="order-result num"></p>
+                </div>
+              </div>
             </div>
+            <button id="t-orders" class="btn btn-secondary trade-btn" type="button" aria-expanded="false" aria-controls="orders">Stop loss / Take profit</button>
             <div class="trade-buttons">
               <button id="t-buy" class="btn trade-btn" type="button">Buy</button>
               <button id="t-sell" class="btn trade-btn" type="button">Sell</button>
+              <button id="t-hold" class="btn btn-secondary trade-btn" type="button">Hold</button>
             </div>
-            <button id="t-hold" class="btn btn-secondary trade-btn trade-hold" type="button">Hold</button>
             <div id="t-msg" class="t-msg" aria-live="polite"></div>
           </div>
         </aside>
@@ -181,6 +220,7 @@
       <div class="card card-wide">
         <p id="rating-stock" class="note"></p>
         <h1 class="sim-h1">How volatile did this stock feel?</h1>
+        <p class="rating-help">Volatile means how much and how quickly the price moved up and down.</p>
         <div class="rating">
           <div class="rating-buttons" id="rating-buttons">
             <button class="rating-btn num" type="button" data-rating="1">1</button>
@@ -198,6 +238,7 @@
         </div>
         <div class="btn-row">
           <button id="rating-next" class="btn" type="button" disabled>Continue</button>
+          <button class="btn btn-secondary" type="button" data-directions>Directions</button>
         </div>
       </div>
     </section>
@@ -205,8 +246,15 @@
     <!-- Thank you -->
     <section id="screen-thanks" class="screen screen-center calm" hidden>
       <div class="card">
-        <h1 class="sim-h1">Thank you</h1>
-        <p>You have finished the study. Please hand the iPad back to the researcher.</p>
+        <h1 class="sim-h1">You&rsquo;re finished.</h1>
+        <p>Thank you for taking part.</p>
+        <!-- Shown only when CONFIG.SURVEY_URL is set (js/config.js). -->
+        <div id="survey-row" class="btn-row" hidden>
+          <button id="survey-open" class="site-btn" type="button">Continue to the short survey</button>
+        </div>
+        <!-- EDIT THE NAMES BELOW if someone else handles removal requests -->
+        <p class="thanks-code">Your participant code: <span id="thanks-code" class="participant-code"></span>.
+          If you ever want your answers removed, give this code to Noah or Jojo.</p>
       </div>
     </section>
   </main>
@@ -221,6 +269,18 @@
         <button id="exit-end" class="site-btn" type="button">End session</button>
         <button id="exit-cancel" class="site-btn site-btn-outline" type="button">Cancel</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Directions: the steps and the candle lesson again (the chart waits while it is open).
+       Filled in by experiment.js from the instructions and the lesson screen. -->
+  <div id="directions" class="dir-overlay" role="dialog" aria-modal="true" aria-labelledby="dir-title" hidden>
+    <div class="dir-box">
+      <div class="dir-head">
+        <h2 id="dir-title" class="dir-title">Directions</h2>
+        <button id="dir-close" class="btn btn-secondary dir-close" type="button">Close</button>
+      </div>
+      <div id="dir-body" class="dir-body text-scroll"></div>
     </div>
   </div>
 

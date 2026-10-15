@@ -226,10 +226,14 @@
   // Where an unfinished session is, in words.
   function describeWhere(s) {
     if (s.screen === 'consent') return 'Consent screen';
-    if (s.screen === 'pid') return 'Participant number screen';
     if (s.screen === 'instructions') return 'Instructions';
-    var where = s.trialIndex === 0 ? 'Practice stock' : 'Stock ' + s.trialIndex + ' of 4';
-    if (s.screen === 'trade' && s.trial) where += ', decision ' + (s.trial.k + 1);
+    if (s.screen === 'lesson') return 'Reading the chart (candle lesson)';
+    var stocks = C.LATIN_SQUARE[s.version] ? C.LATIN_SQUARE[s.version].length : 4;
+    var where = s.trialIndex === 0 ? 'Practice stock' : 'Stock ' + s.trialIndex + ' of ' + stocks;
+    if (s.screen === 'trade' && s.trial) {
+      var decisions = s.trialIndex === 0 ? C.PRACTICE_CHECKPOINTS : C.CHECKPOINTS;
+      where += ', decision ' + (s.trial.k + 1) + ' of ' + decisions;
+    }
     if (s.screen === 'rating') where += ', rating';
     return where;
   }
@@ -240,7 +244,7 @@
     $('r-no-session').hidden = has;
     $('r-session-rows').hidden = !has;
     if (!has) return;
-    $('r-session-pid').textContent = (s.participantId || 'Not entered yet') + ', version ' + s.version;
+    $('r-session-pid').textContent = (s.participantId || 'No code') + ', version ' + s.version;
     $('r-session-where').textContent = describeWhere(s);
     $('r-session-started').textContent = s.createdAt ? new Date(s.createdAt).toLocaleString() : '';
   }

@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Options Playground - Stock Chart Study</title>
+  <link rel="icon" href="data:,">
+  <link rel="preload" href="fonts/cormorant-garamond/cormorant-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/options.css">
+</head>
+<body class="site">
+  <nav class="nav"><span class="nav-title">Noah &amp; Jojo</span><a class="nav-tab" href="index.html">Home</a><a class="nav-tab" href="simulation.html">Simulation</a><a class="nav-tab" href="about.html">About Us</a><a class="nav-tab" href="market.html">Market Data</a><a class="nav-tab" href="options.html" aria-current="page">Options<span class="nav-long">&nbsp;Playground</span></a><a class="nav-tab" href="contact.html">Contact Us</a></nav>
+
+  <!-- A calculator for learning how options work. It is not part of the
+       experiment: nothing here is saved. The math is in js/options.js. -->
+  <main class="opt-main">
+    <header class="page-head">
+      <h1 class="page-title">Options Playground</h1>
+      <p class="page-sub">Learn how call and put options work. Everything here is pretend money and is not part of the study.</p>
+    </header>
+
+    <div class="opt-grid">
+
+      <!-- ===== Left: choose the option ===== -->
+      <section class="opt-controls" aria-label="Choose an option">
+
+        <div class="opt-field" id="f-price">
+          <label class="opt-label" for="o-price">Stock price</label>
+          <div class="opt-money">
+            <span class="opt-dollar" aria-hidden="true">$</span>
+            <input id="o-price" class="opt-input" type="text" inputmode="decimal" enterkeyhint="done"
+                   autocomplete="off" autocorrect="off" spellcheck="false" value="100.00"
+                   aria-describedby="o-price-hint">
+          </div>
+          <p id="o-price-hint" class="opt-hint">The price of one share now.</p>
+        </div>
+
+        <form id="o-load" class="opt-field" autocomplete="off">
+          <label class="opt-label" for="o-ticker">Load a real price <span class="opt-optional">(optional)</span></label>
+          <div class="opt-load-row">
+            <input id="o-ticker" class="ticker-input opt-ticker" type="text" maxlength="10"
+                   placeholder="Ticker, like AAPL" autocapitalize="characters" autocorrect="off"
+                   spellcheck="false" enterkeyhint="go" aria-describedby="o-load-status">
+            <button id="o-load-btn" class="site-btn site-btn-outline opt-load-btn" type="submit">Load</button>
+          </div>
+          <p id="o-load-status" class="opt-hint" role="status" aria-live="polite"></p>
+        </form>
+
+        <div class="opt-field">
+          <span class="opt-label" id="o-type-label">Option type</span>
+          <div class="segmented opt-seg" id="o-type" role="group" aria-labelledby="o-type-label">
+            <button type="button" data-type="call" aria-pressed="true">Call</button>
+            <button type="button" data-type="put" aria-pressed="false">Put</button>
+          </div>
+          <p id="o-type-hint" class="opt-hint">The right to buy the stock at the strike price.</p>
+        </div>
+
+        <div class="opt-field" id="f-strike">
+          <label class="opt-label" for="o-strike">Strike price</label>
+          <div class="opt-money">
+            <span class="opt-dollar" aria-hidden="true">$</span>
+            <input id="o-strike" class="opt-input" type="text" inputmode="decimal" enterkeyhint="done"
+                   autocomplete="off" autocorrect="off" spellcheck="false" value="100.00"
+                   aria-describedby="o-strike-hint">
+          </div>
+          <p id="o-strike-hint" class="opt-hint">Try a strike above or below the stock price.</p>
+        </div>
+
+        <div class="opt-field">
+          <span class="opt-label" id="o-days-label">Days to expiration</span>
+          <div class="segmented opt-seg" id="o-days" role="group" aria-labelledby="o-days-label">
+            <button type="button" data-days="7" aria-pressed="false">7 days</button>
+            <button type="button" data-days="30" aria-pressed="true">30 days</button>
+            <button type="button" data-days="60" aria-pressed="false">60 days</button>
+            <button type="button" data-days="90" aria-pressed="false">90 days</button>
+          </div>
+          <p class="opt-hint">More time usually makes an option cost more.</p>
+        </div>
+
+        <div class="opt-field">
+          <div class="opt-label-row">
+            <label class="opt-label" for="o-vol">Volatility</label>
+            <output id="o-vol-out" class="opt-value" for="o-vol">30%</output>
+          </div>
+          <input id="o-vol" class="opt-range" type="range" min="10" max="150" step="1" value="30"
+                 aria-describedby="o-vol-hint">
+          <p id="o-vol-hint" class="opt-hint">How much the price tends to swing in a year.</p>
+        </div>
+
+        <div class="opt-field" id="f-contracts">
+          <label class="opt-label" for="o-contracts">Number of contracts</label>
+          <div class="opt-stepper-row">
+            <div class="opt-stepper">
+              <button id="o-minus" type="button" aria-label="One contract less">&minus;</button>
+              <input id="o-contracts" type="text" inputmode="numeric" enterkeyhint="done"
+                     autocomplete="off" value="1" aria-describedby="o-contracts-hint">
+              <button id="o-plus" type="button" aria-label="One contract more">+</button>
+            </div>
+            <p id="o-contracts-hint" class="opt-hint opt-inline-hint">1 contract = 100 shares</p>
+          </div>
+        </div>
+
+        <p class="opt-hint opt-rate">The interest rate is fixed at 4% per year.</p>
+      </section>
+
+      <!-- ===== Right: price, chart and "what if" ===== -->
+      <section class="opt-results" aria-label="Results">
+        <p id="o-summary" class="opt-summary">1 call contract (100 shares), strike $100.00, expires in 30 days.</p>
+
+        <dl class="opt-stats">
+          <div class="opt-stat">
+            <dt>Option price per share</dt>
+            <dd id="o-premium" class="opt-big">&ndash;</dd>
+            <dd id="o-per-contract" class="opt-small">&ndash;</dd>
+          </div>
+          <div class="opt-stat">
+            <dt>Break-even</dt>
+            <dd id="o-break-even" class="opt-big">&ndash;</dd>
+            <dd class="opt-small">at expiration</dd>
+          </div>
+          <div class="opt-stat">
+            <dt>Maximum loss</dt>
+            <dd id="o-max-loss" class="opt-big">&ndash;</dd>
+            <dd class="opt-small">what you pay for it</dd>
+          </div>
+          <div class="opt-stat">
+            <dt>Maximum gain</dt>
+            <dd id="o-max-gain" class="opt-big">&ndash;</dd>
+            <dd id="o-max-gain-note" class="opt-small">&ndash;</dd>
+          </div>
+        </dl>
+
+        <figure class="opt-figure">
+          <figcaption class="opt-caption">Profit or loss at expiration</figcaption>
+          <div id="o-chart" class="opt-chart">
+            <svg id="o-svg" class="opt-svg" role="img" aria-label="Payoff diagram"></svg>
+            <p id="o-chart-msg" class="opt-chart-msg" hidden></p>
+          </div>
+        </figure>
+
+        <!-- "What if": drag the handle along the price axis. -->
+        <div id="o-whatif-box" class="opt-whatif">
+          <input id="o-whatif" class="opt-range" type="range" min="50" max="150" step="0.5" value="100"
+                 aria-describedby="o-pl-text">
+          <div class="opt-whatif-head">
+            <label class="opt-label" for="o-whatif">What if the stock is at <span id="o-whatif-price" class="num">$100.00</span> at expiration?</label>
+            <span id="o-pl" class="opt-pl" aria-live="polite">&ndash;</span>
+          </div>
+          <p id="o-pl-text" class="opt-hint">&nbsp;</p>
+        </div>
+      </section>
+    </div>
+
+    <section class="opt-words" aria-labelledby="o-words-title">
+      <h2 id="o-words-title" class="opt-h2">Words to know</h2>
+      <dl class="opt-terms">
+        <dt>Call</dt>
+        <dd>The right, but not the duty, to buy a stock at the strike price, so it gains value when the stock goes up.</dd>
+        <dt>Put</dt>
+        <dd>The right, but not the duty, to sell a stock at the strike price, so it gains value when the stock goes down.</dd>
+        <dt>Strike price</dt>
+        <dd>The price at which the option lets you buy (call) or sell (put) the stock.</dd>
+        <dt>Premium</dt>
+        <dd>The price of the option, quoted per share, and one contract covers 100 shares.</dd>
+        <dt>Expiration</dt>
+        <dd>The day the option ends, after which it is either worth something or worth nothing.</dd>
+        <dt>Break-even</dt>
+        <dd>The stock price at expiration where you neither make nor lose money, because the option is worth exactly what you paid.</dd>
+        <dt>Volatility</dt>
+        <dd>How much a stock's price tends to swing, and more swing makes options cost more because big moves are more likely.</dd>
+      </dl>
+    </section>
+
+    <p class="opt-disclaimer">For learning only, not financial advice. Prices are estimates from the Black-Scholes formula (European options, no dividends). A put is never priced below what it is worth if used today. Real options have fees, bid and ask prices and other details not shown here.</p>
+  </main>
+
+  <script src="js/options.js"></script>
+
+  <footer id="site-footer" data-page="Options Playground"></footer>
+  <script src="js/footer.js"></script>
+</body>
+</html>

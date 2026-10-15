@@ -31,6 +31,7 @@
           { text: 'Home', link: 'index.html' },
           { text: 'Simulation', link: 'simulation.html' },
           { text: 'Market Data', link: 'market.html' },
+          { text: 'Options Playground', link: 'options.html' },
           { text: 'About Us', link: 'about.html' },
           { text: 'Contact Us', link: 'contact.html' },
         ],
@@ -66,6 +67,15 @@
     right: 'Science Research {year}',
   };
   // ======================= END OF FOOTER TEXT =======================
+
+  // On a narrow screen the navigation bar scrolls sideways. Scroll it so the
+  // current page's tab is in view (this script runs on every page with the bar).
+  const nav = document.querySelector('.nav');
+  const currentTab = nav && nav.querySelector('[aria-current]');
+  if (currentTab && nav.scrollWidth > nav.clientWidth) {
+    const tabRight = currentTab.getBoundingClientRect().right - nav.getBoundingClientRect().left + nav.scrollLeft;
+    nav.scrollLeft = Math.max(0, tabRight - nav.clientWidth + 10);
+  }
 
   const footer = document.getElementById('site-footer');
   if (!footer) return;

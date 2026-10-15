@@ -18,13 +18,15 @@ const MAX_BYTES = 1000000;    // about 1 MB; one stock's data is far smaller
 
 // The only tabs, with exactly these columns (docs/EXPERIMENT.md section 7).
 // "Test" is the connection test page (test.html).
+// Keep Actions, Summary and Sessions in sync with COLUMNS in public/js/storage.js.
 const TABS = {
   Actions: ['participant_id', 'version', 'session_id', 'position', 'stock', 'stock_slot', 'timeframe',
     'checkpoint', 'action', 'shares', 'price', 'cash', 'shares_held', 'portfolio_value', 'rating',
-    'decision_ms', 'timestamp'],
+    'decision_ms', 'timestamp', 'stop_loss', 'take_profit'],
   Summary: ['participant_id', 'version', 'session_id', 'position', 'stock', 'stock_slot', 'timeframe',
     'volatility_rating', 'final_price', 'final_cash', 'final_shares', 'final_value',
-    'final_pct_in_stock', 'return_pct', 'trades', 'timestamp'],
+    'final_pct_in_stock', 'return_pct', 'trades', 'timestamp',
+    'stop_loss_used', 'take_profit_used', 'stop_loss_triggered', 'take_profit_triggered', 'directions_opened'],
   Sessions: ['participant_id', 'version', 'version_mode', 'session_id', 'event', 'timestamp', 'device'],
   Test: ['timestamp', 'message', 'screen', 'device'],
   Contact: ['timestamp', 'name', 'email', 'message'], // contact.html

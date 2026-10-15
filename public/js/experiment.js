@@ -13,6 +13,8 @@
 
   var C = window.CONFIG;
   var DAY = C.SESSION_MINUTES; // 390 one-minute rows per trading day
+  var STOCKS = C.LATIN_SQUARE[1].length; // stocks per session (4)
+  var FORMAT = 2; // saved sessions from an older version of this page (another format) are not resumed
 
   // ===================================================================
   // Small helpers
@@ -25,6 +27,9 @@
   function cents(x) { return Math.round(x * 100); }   // work in whole cents to avoid rounding errors
   function round2(x) { return Math.round(x * 100) / 100; }
   function nowIso() { return new Date().toISOString(); }
+  function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+
+  var NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 
   // ===================================================================
   // Data file (public/data/stocks.json, checked in storage.js)
@@ -36,6 +41,13 @@
   var dataReady = Store.loadData().then(function (result) {
     data = result.data;
     dataError = result.error;
+    // The instructions say where the prices come from. The placeholder file
+    // has made-up prices, so then they say that instead.
+    if (data && data.placeholder) {
+      document.querySelectorAll('[data-data-source]').forEach(function (el) {
+        el.textContent = 'For now the prices are made up for testing.';
+      });
+    }
     renderStart();
   });
 
@@ -43,7 +55,7 @@
   // Screens and the in-session lockdown
   // ===================================================================
 
-  var SCREENS = ['start', 'paused', 'consent', 'declined', 'pid', 'instructions', 'intro', 'trade', 'rating', 'thanks'];
+  var SCREENS = ['start', 'paused', 'consent', 'declined', 'instructions', 'lesson', 'intro', 'trade', 'rating', 'thanks'];
   var currentScreen = null;
   var inSession = false;
 
@@ -114,14 +126,34 @@
   document.addEventListener('dblclick', function (e) { if (inSession) e.preventDefault(); });
 
   // ===================================================================
-  // Completed sessions on this device (the version rotation is in storage.js)
+  // Participant code (made on this iPad when the participant taps Begin)
   // ===================================================================
 
-  function completedList() { return Store.completed(); }
+  // No 0/O, 1/I/L: the code is easy to read out and write down.
+  var CODE_LETTERS = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 
-  function idAlreadyCompleted(id) {
-    var key = id.toLowerCase();
-    return completedList().some(function (c) { return String(c.participant_id).toLowerCase() === key; });
+  function randomIndex(n) {
+    if (window.crypto && crypto.getRandomValues) {
+      var a = new Uint32Array(1);
+      crypto.getRandomValues(a);
+      return a[0] % n;
+    }
+    return Math.floor(Math.random() * n);
+  }
+
+  function codeAlreadyCompleted(code) {
+    return Store.completed().some(function (c) { return String(c.participant_id).toUpperCase() === code; });
+  }
+
+  // "P-" and 4 characters, for example "P-7F3K". A code that already
+  // finished on this iPad is never given out again.
+  function newParticipantCode() {
+    var code;
+    do {
+      code = 'P-';
+      for (var i = 0; i < 4; i++) code += CODE_LETTERS[randomIndex(CODE_LETTERS.length)];
+    } while (codeAlreadyCompleted(code));
+    return code;
   }
 
   // ===================================================================
@@ -129,29 +161,42 @@
   // ===================================================================
 
   // S = {
-  //   sessionId, participantId, version, versionMode ('auto' | 'manual'),
-  //   screen: 'consent' | 'pid' | 'instructions' | 'intro' | 'trade' | 'rating',
+  //   format (FORMAT), sessionId, participantId (the participant code), version,
+  //   versionMode ('auto' | 'manual'),
+  //   screen: 'consent' | 'instructions' | 'lesson' | 'intro' | 'trade' | 'rating',
   //   trialIndex: 0 = practice, 1-4 = stocks,
-  //   trial: { k (checkpoint index), phase ('decision' | 'animating'), cash, shares, trades, rows },
+  //   trial: { k (checkpoint index), phase ('decision' | 'animating'), cash, shares, trades, rows,
+  //            stop, target (active stop loss / take profit price, or null),
+  //            stopUsed, targetUsed (1 once one was set), stopHits, targetHits (automatic sales),
+  //            note (message about an automatic sale, shown until the next decision) },
+  //   directions: times Directions was opened for the current stock (its intro, trade and rating screens),
   //   createdAt
   // }
   var S = null;
 
-  function save() { if (S) Store.saveSession(S); }
+  // During a segment of chart animation, the trial is saved as it was when
+  // the segment started. After a refresh the segment replays from its start
+  // with the same cash, shares and orders, so a stop loss or take profit that
+  // sold during it sells again at the same minute and price.
+  function save() {
+    if (!S) return;
+    if (anim && anim.startTrial) Store.saveSession(Object.assign({}, S, { trial: anim.startTrial }));
+    else Store.saveSession(S);
+  }
 
   function logSession(event) { Store.logSession(S, event); }
 
   // The saved session, or null. Unreadable saved state is dropped rather than getting stuck.
   function loadSavedSession() {
     var s = Store.loadSession();
-    if (s && !(s.sessionId && C.LATIN_SQUARE[s.version])) {
+    if (s && !(s.sessionId && C.LATIN_SQUARE[s.version] && s.format === FORMAT)) {
       Store.clearSession();
       s = null;
     }
     return s;
   }
 
-  // The practice stock plus the 4 stocks of this version, in order.
+  // The practice stock plus the stocks of this version, in order.
   function trialList(version) {
     var list = [{ practice: true, position: 0, slot: 'P', tf: C.PRACTICE_TIMEFRAME }];
     C.LATIN_SQUARE[version].forEach(function (pair, i) {
@@ -166,7 +211,7 @@
   }
 
   // 1-minute row indexes where the participant decides, and where the stock ends.
-  // Main: 7 checkpoints over days 2-3. Practice: 3 checkpoints over day 2.
+  // Main: CHECKPOINTS over days 2-3. Practice: PRACTICE_CHECKPOINTS over day 2.
   function checkpointsFor(trial) {
     var n = trial.practice ? C.PRACTICE_CHECKPOINTS : C.CHECKPOINTS;
     var span = trial.practice ? DAY : 2 * DAY;
@@ -178,11 +223,12 @@
   // Show whatever screen the session is on (also used to resume).
   function render() {
     stopAnimation();
+    closeDirections();
     setInSession(true);
     switch (S.screen) {
       case 'consent': show('consent'); break;
-      case 'pid': showPid(); break;
       case 'instructions': show('instructions'); break;
+      case 'lesson': show('lesson'); break;
       case 'intro': showIntro(); break;
       case 'trade': showTrade(); break;
       case 'rating': showRating(); break;
@@ -203,13 +249,15 @@
     Store.remove('researcher.unlock');
     var mode = Store.versionMode();
     S = {
+      format: FORMAT,
       sessionId: Store.makeId(),
-      participantId: '',
+      participantId: newParticipantCode(),
       version: Store.nextVersion(),
       versionMode: mode === 'auto' ? 'auto' : 'manual',
       screen: 'consent',
       trialIndex: 0,
       trial: null,
+      directions: 0,
       createdAt: nowIso(),
     };
     save();
@@ -233,10 +281,13 @@
   }
 
   // ===================================================================
-  // Consent, participant ID, instructions, stock intro
+  // Consent, instructions, candle lesson, stock intro
   // ===================================================================
 
-  $('consent-yes').addEventListener('click', function () { goTo('pid'); });
+  $('consent-yes').addEventListener('click', function () {
+    logSession('started');
+    goTo('instructions');
+  });
   $('consent-no').addEventListener('click', function () {
     logSession('consent_declined');
     Store.clearSession();
@@ -244,31 +295,8 @@
     show('declined');
   });
 
-  function showPid() {
-    $('pid-input').value = S.participantId || '';
-    $('pid-msg').textContent = '';
-    show('pid');
-  }
-
-  $('pid-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var id = $('pid-input').value.trim();
-    var msg = $('pid-msg');
-    if (id.length === 0) { msg.textContent = 'Enter your participant number.'; return; }
-    if (id.length > 20) { msg.textContent = 'Use 20 characters or fewer.'; return; }
-    if (idAlreadyCompleted(id)) {
-      msg.textContent = 'This number has already finished the study on this iPad. Please ask the researcher.';
-      return;
-    }
-    $('pid-input').blur();
-    S.participantId = id;
-    logSession('started');
-    goTo('instructions');
-  });
-
-  $('pid-input').addEventListener('input', function () { $('pid-msg').textContent = ''; });
-
-  $('instructions-next').addEventListener('click', function () { goTo('intro'); });
+  $('instructions-next').addEventListener('click', function () { goTo('lesson'); });
+  $('lesson-next').addEventListener('click', function () { goTo('intro'); });
 
   function showIntro() {
     var trial = currentTrial();
@@ -276,16 +304,119 @@
       $('intro-title').textContent = 'Practice stock';
       $('intro-note').textContent = 'This stock is for practice, so you can try the buttons. It is not recorded.';
     } else {
-      $('intro-title').textContent = 'Stock ' + trial.position + ' of 4';
+      $('intro-title').textContent = 'Stock ' + trial.position + ' of ' + STOCKS;
       $('intro-note').textContent = 'You start with ' + money(C.START_CASH).replace('.00', '') + ' and no shares.';
     }
     show('intro');
   }
 
   $('intro-start').addEventListener('click', function () {
-    S.trial = { k: 0, phase: 'decision', cash: C.START_CASH, shares: 0, trades: 0, rows: [] };
+    S.trial = {
+      k: 0, phase: 'decision', cash: C.START_CASH, shares: 0, trades: 0, rows: [],
+      stop: null, target: null, stopUsed: 0, targetUsed: 0, stopHits: 0, targetHits: 0, note: '',
+    };
     goTo('trade');
   });
+
+  // ===================================================================
+  // The candle picture (lesson screen and Directions box)
+  // ===================================================================
+
+  // A green candle (price went up) and a red candle (price went down), with
+  // labels and thin leader lines. Drawn as SVG, so it is sharp at any size.
+  function candleFigure() {
+    var UP = '#089981', DOWN = '#f23645', INK = '#131722', LINE = '#9598a1';
+    var out = [];
+    function line(x1, y1, x2, y2) {
+      out.push('<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + LINE +
+        '" stroke-width="1" vector-effect="non-scaling-stroke"/>');
+    }
+    function text(x, y, anchor, words, weight) {
+      out.push('<text x="' + x + '" y="' + y + '" dy="0.35em" text-anchor="' + anchor + '"' +
+        (weight ? ' font-weight="' + weight + '"' : '') + '>' + words + '</text>');
+    }
+    // One candle centered at x: wick from the high (y 20) to the low (y 200), body from y 60 to 160.
+    function candle(x, color) {
+      out.push('<line x1="' + x + '" y1="20" x2="' + x + '" y2="200" stroke="' + color + '" stroke-width="2"/>');
+      out.push('<rect x="' + (x - 22) + '" y="60" width="44" height="100" fill="' + color + '"/>');
+    }
+
+    candle(150, UP);
+    candle(370, DOWN);
+
+    // Green candle, labels on the left: it opened at the bottom of the body and closed at the top.
+    text(100, 20, 'end', 'High'); line(106, 20, 145, 20);
+    text(100, 60, 'end', 'Close'); line(106, 60, 126, 60);
+    text(100, 160, 'end', 'Open'); line(106, 160, 126, 160);
+    text(100, 200, 'end', 'Low'); line(106, 200, 145, 200);
+
+    // Red candle, labels on the right: it opened at the top of the body and closed at the bottom.
+    text(420, 20, 'start', 'High'); line(375, 20, 414, 20);
+    text(420, 60, 'start', 'Open'); line(394, 60, 414, 60);
+    text(420, 160, 'start', 'Close'); line(394, 160, 414, 160);
+    text(420, 200, 'start', 'Low'); line(375, 200, 414, 200);
+
+    // "Wick" and "Body" in the middle, pointing at both candles.
+    text(260, 40, 'middle', 'Wick'); line(155, 40, 236, 40); line(284, 40, 365, 40);
+    text(260, 110, 'middle', 'Body'); line(174, 110, 236, 110); line(284, 110, 346, 110);
+
+    text(150, 236, 'middle', 'Price went up', 600);
+    text(370, 236, 'middle', 'Price went down', 600);
+
+    return '<svg class="candle-svg" viewBox="0 0 520 252" role="img" fill="' + INK + '" font-size="15" ' +
+      'font-family="-apple-system, BlinkMacSystemFont, &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif" ' +
+      'aria-label="Two candles. Green: the price went up, so it opened at the bottom of the body and closed at the top. ' +
+      'Red: the price went down, so it opened at the top of the body and closed at the bottom. ' +
+      'The top of each wick is the high and the bottom is the low.">' + out.join('') + '</svg>';
+  }
+
+  // ===================================================================
+  // Directions (the steps and the candle lesson again, at any time)
+  // ===================================================================
+
+  var directionsOpen = false;
+
+  // Copy the instructions list and the lesson into the Directions box, so the
+  // text is written only once (in simulation.html).
+  function buildDirections() {
+    var body = $('dir-body');
+    var steps = $('instructions-steps').cloneNode(true);
+    steps.removeAttribute('id');
+    body.appendChild(steps);
+    var heading = document.createElement('h3');
+    heading.className = 'dir-sub';
+    heading.textContent = 'Reading the chart';
+    body.appendChild(heading);
+    var lesson = $('lesson-content').cloneNode(true);
+    lesson.removeAttribute('id');
+    body.appendChild(lesson);
+  }
+
+  // The chart waits while the box is open (hold.directions), and goes on
+  // exactly where it was when the box is closed.
+  function openDirections() {
+    if (directionsOpen) return;
+    directionsOpen = true;
+    hold.directions = true;
+    $('directions').hidden = false;
+    $('dir-body').scrollTop = 0;
+    updateScrollCues();
+    if (S) {
+      S.directions = (S.directions || 0) + 1;
+      save();
+    }
+  }
+
+  function closeDirections() {
+    directionsOpen = false;
+    hold.directions = false;
+    $('directions').hidden = true;
+  }
+
+  document.querySelectorAll('[data-directions]').forEach(function (b) {
+    b.addEventListener('click', openDirections);
+  });
+  $('dir-close').addEventListener('click', closeDirections);
 
   // ===================================================================
   // Trade screen
@@ -309,10 +440,11 @@
     simChart.load(stock, C.TIMEFRAMES[trial.tf], cp.cps[t.k]);
 
     day1Close = stock.m1[DAY - 1][4];
-    $('chart-label').textContent = stock.ticker + ' \u00b7 ' + trial.tf;
+    $('chart-label').textContent = stock.ticker + ' · ' + trial.tf;
     $('t-ticker').textContent = stock.ticker;
     $('t-name').textContent = stock.name;
     setMessage('');
+    showOrders(false);
 
     if (t.phase === 'animating') startSegment();
     else startDecision();
@@ -332,20 +464,25 @@
     $('t-cash').textContent = money(t.cash);
     $('t-held').textContent = String(t.shares);
     $('t-value').textContent = money((cents(t.cash) + t.shares * cents(price)) / 100);
+    $('t-stop').textContent = t.stop ? money(t.stop) : 'Off';
+    $('t-target').textContent = t.target ? money(t.target) : 'Off';
     $('t-entry').textContent = entry === '' ? '0' : entry;
     $('t-max').textContent = 'Max you can buy: ' + Math.floor(cents(t.cash) / cents(price));
   }
 
-  function setMessage(text, isInfo) {
+  // kind: '' (a problem, red), 'info' (grey) or 'event' (an automatic sale, dark).
+  function setMessage(text, kind) {
     var m = $('t-msg');
     m.textContent = text;
-    m.className = 't-msg' + (isInfo ? ' info' : '');
+    m.className = 't-msg' + (kind === true ? ' info' : (kind ? ' ' + kind : ''));
   }
 
-  // Keypad and Buy/Sell/Hold only work while a decision is open.
+  // Keypad, stop loss / take profit and Buy/Sell/Hold only work while a decision is open.
   function setTradingOpen(open) {
     tradingOpen = open;
-    document.querySelectorAll('#keypad .key, #t-buy, #t-sell, #t-hold').forEach(function (b) { b.disabled = !open; });
+    document.querySelectorAll('#keypad .key, #t-orders, #t-buy, #t-sell, #t-hold').forEach(function (b) { b.disabled = !open; });
+    if (!open) showOrders(false);
+    renderOrderChoices();
   }
 
   function startDecision() {
@@ -353,7 +490,10 @@
     var n = checkpointsFor(trial).cps.length;
     entry = '';
     $('t-status').textContent = 'Decision ' + (S.trial.k + 1) + ' of ' + n;
-    setMessage('');
+    // An automatic sale during the last segment stays in view until the participant acts.
+    setMessage(S.trial.note || '', 'event');
+    resetOrderChoices();
+    showOrders(false);
     setTradingOpen(true);
     updateSide();
     decisionStart = performance.now();
@@ -372,11 +512,108 @@
     updateSide();
   });
 
+  // ---- Stop loss / take profit choices ----
+  // Each stepper has a list of choices sorted by price, low to high:
+  //   stop loss:   -20% ... -4%, -2%, Off      (Off is next to the current price)
+  //   take profit: Off, +2%, +4% ... +30%
+  // An order that is already active is in the list as "Keep $45.12" at its own
+  // price, and the stepper starts there; otherwise it starts at Off. The
+  // percent levels are worked out from the current price.
+
+  var choice = { stop: null, target: null }; // { list, i } for each stepper
+  var ordersOpen = false;                    // steppers shown instead of the keypad
+
+  function orderChoices(which, priceC, activeC) {
+    var list = [];
+    var maxPct = which === 'stop' ? C.STOP_LOSS_MAX_PCT : C.TAKE_PROFIT_MAX_PCT;
+    for (var pct = C.ORDER_STEP_PCT; pct <= maxPct; pct += C.ORDER_STEP_PCT) {
+      var p = Math.round(priceC * (which === 'stop' ? 100 - pct : 100 + pct) / 100);
+      var ok = which === 'stop' ? p > 0 && p < priceC : p > priceC;
+      if (ok && p !== activeC) list.push({ kind: 'level', pct: pct, priceC: p });
+    }
+    if (activeC) list.push({ kind: 'keep', priceC: activeC });
+    list.sort(function (a, b) { return a.priceC - b.priceC; });
+    if (which === 'stop') list.push({ kind: 'off' });
+    else list.unshift({ kind: 'off' });
+    return list;
+  }
+
+  function resetOrderChoices() {
+    var priceC = cents(simChart.lastPrice());
+    ['stop', 'target'].forEach(function (which) {
+      var activeC = S.trial[which] ? cents(S.trial[which]) : 0;
+      var list = orderChoices(which, priceC, activeC);
+      var start = 0;
+      list.forEach(function (o, i) { if (o.kind === (activeC ? 'keep' : 'off')) start = i; });
+      choice[which] = { list: list, i: start };
+    });
+    renderOrderChoices();
+  }
+
+  function chosen(which) { return choice[which].list[choice[which].i]; }
+
+  function renderOrderChoices() {
+    if (!choice.stop) return;
+    ['stop', 'target'].forEach(function (which) {
+      var c = choice[which];
+      var o = chosen(which);
+      var isStop = which === 'stop';
+      $(which + '-choice').textContent = o.kind === 'off' ? 'Off'
+        : o.kind === 'keep' ? 'Keep ' + money(o.priceC / 100)
+          : (isStop ? '−' : '+') + o.pct + '%';
+      $(which + '-result').textContent = o.kind === 'off'
+        ? (isStop ? 'No stop loss' : 'No take profit')
+        : (isStop ? 'Sell if price falls to ' : 'Sell if price rises to ') + money(o.priceC / 100);
+      var row = document.querySelector('.order[data-order="' + which + '"]');
+      row.querySelector('[data-step="-1"]').disabled = !tradingOpen || c.i === 0;
+      row.querySelector('[data-step="1"]').disabled = !tradingOpen || c.i === c.list.length - 1;
+    });
+  }
+
+  $('orders').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-step]');
+    if (!b || !tradingOpen) return;
+    var which = b.closest('.order').getAttribute('data-order');
+    var c = choice[which];
+    c.i = Math.max(0, Math.min(c.list.length - 1, c.i + Number(b.getAttribute('data-step'))));
+    renderOrderChoices();
+  });
+
+  // The steppers take the keypad's place (same height, so nothing moves).
+  function showOrders(open) {
+    ordersOpen = open;
+    $('orders').hidden = !open;
+    $('keypad').classList.toggle('covered', open);
+    $('t-orders').setAttribute('aria-expanded', String(open));
+    $('t-orders').textContent = open ? 'Back to keypad' : 'Stop loss / Take profit';
+  }
+
+  $('t-orders').addEventListener('click', function () {
+    if (!tradingOpen) return;
+    showOrders(!ordersOpen);
+    if (ordersOpen) setMessage('Your choice is used when you tap Buy, Sell or Hold.', 'info');
+    else setMessage(S.trial.note || '', 'event');
+  });
+
   $('t-buy').addEventListener('click', function () { act('buy'); });
   $('t-sell').addEventListener('click', function () { act('sell'); });
   $('t-hold').addEventListener('click', function () { act('hold'); });
 
+  // The first columns of every Actions row for this stock.
+  function baseRow(trial, stock) {
+    return {
+      participant_id: S.participantId,
+      version: S.version,
+      session_id: S.sessionId,
+      position: trial.position,
+      stock: stock.ticker,
+      stock_slot: trial.slot,
+      timeframe: trial.tf,
+    };
+  }
+
   // One action per checkpoint. Invalid entries show a message and do not advance.
+  // The stop loss / take profit choices are applied together with the action.
   function act(action) {
     if (!tradingOpen) return;
     var trial = currentTrial();
@@ -395,29 +632,42 @@
       cashC -= n * priceC;
       t.shares += n;
       t.trades++;
-      done = 'Bought ' + n + (n === 1 ? ' share' : ' shares') + ' at ' + money(price) + '.';
+      done = 'Bought ' + plural(n, 'share') + ' at ' + money(price) + '.';
     } else if (action === 'sell') {
       if (t.shares === 0) return setMessage('You have no shares to sell.');
       if (n < 1) return setMessage('Enter how many shares to sell, then tap Sell.');
-      if (n > t.shares) return setMessage('You only have ' + t.shares + (t.shares === 1 ? ' share' : ' shares') + ' to sell.');
+      if (n > t.shares) return setMessage('You only have ' + plural(t.shares, 'share') + ' to sell.');
       cashC += n * priceC;
       t.shares -= n;
       t.trades++;
-      done = 'Sold ' + n + (n === 1 ? ' share' : ' shares') + ' at ' + money(price) + '.';
+      done = 'Sold ' + plural(n, 'share') + ' at ' + money(price) + '.';
     } else {
       done = 'You held.';
     }
-
     t.cash = cashC / 100;
+
+    // Stop loss and take profit: Off clears an order, Keep leaves it, a level sets a new price.
+    // Without shares there is nothing to sell, so both are cleared.
+    var before = { stop: t.stop, target: t.target };
+    var wanted = false;
+    ['stop', 'target'].forEach(function (which) {
+      var o = chosen(which);
+      if (o.kind !== 'off') wanted = true;
+      t[which] = o.kind === 'off' ? null : o.priceC / 100;
+    });
+    if (t.shares === 0) { t.stop = null; t.target = null; }
+    if (t.stop) t.stopUsed = 1;
+    if (t.target) t.targetUsed = 1;
+    if (t.shares === 0 && wanted) {
+      done += ' No shares, so no stop loss or take profit.';
+    } else {
+      if (t.stop !== before.stop) done += ' Stop loss: ' + (t.stop ? money(t.stop) : 'off') + '.';
+      if (t.target !== before.target) done += ' Take profit: ' + (t.target ? money(t.target) : 'off') + '.';
+    }
+    t.note = '';
+
     if (!trial.practice) {
-      t.rows.push({
-        participant_id: S.participantId,
-        version: S.version,
-        session_id: S.sessionId,
-        position: trial.position,
-        stock: stock.ticker,
-        stock_slot: trial.slot,
-        timeframe: trial.tf,
+      t.rows.push(Object.assign(baseRow(trial, stock), {
         checkpoint: t.k + 1,
         action: action,
         shares: action === 'hold' ? '' : n,
@@ -428,7 +678,9 @@
         rating: '',
         decision_ms: Math.round(performance.now() - decisionStart),
         timestamp: nowIso(),
-      });
+        stop_loss: t.stop || '',
+        take_profit: t.target || '',
+      }));
     }
 
     entry = '';
@@ -438,14 +690,69 @@
     setMessage(done, true);
   }
 
+  // Stop loss / take profit check for 1-minute row m (just revealed). Rows are
+  // checked one by one in order, so the result is the same in every timeframe.
+  //   opens at or below the stop:    sell everything at the open (the price jumped past the stop)
+  //   opens at or above the target:  sell everything at the open
+  //   low reaches the stop:          sell everything at the stop price
+  //   high reaches the target:       sell everything at the target price
+  // If both the stop and the target are inside the same minute, the stop wins
+  // (the careful choice: we cannot know which came first within the minute).
+  function checkOrders(m) {
+    var t = S.trial;
+    if (t.shares === 0 || (!t.stop && !t.target)) return;
+    var trial = currentTrial();
+    var stock = stockFor(trial);
+    var row = stock.m1[m];
+    var openC = cents(row[1]), highC = cents(row[2]), lowC = cents(row[3]);
+    var stopC = t.stop ? cents(t.stop) : 0;
+    var targetC = t.target ? cents(t.target) : 0;
+    var kind = '';
+    var fillC = 0;
+    if (stopC && openC <= stopC) { kind = 'stop'; fillC = openC; }
+    else if (targetC && openC >= targetC) { kind = 'target'; fillC = openC; }
+    else if (stopC && lowC <= stopC) { kind = 'stop'; fillC = stopC; }
+    else if (targetC && highC >= targetC) { kind = 'target'; fillC = targetC; }
+    if (!kind) return;
+
+    var n = t.shares;
+    var cashC = cents(t.cash) + n * fillC;
+    t.cash = cashC / 100;
+    t.shares = 0;
+    t.stop = null;
+    t.target = null;
+    if (kind === 'stop') t.stopHits++;
+    else t.targetHits++;
+    t.note = (kind === 'stop' ? 'Stop loss' : 'Take profit') + ': sold ' + plural(n, 'share') + ' at ' + money(fillC / 100) + '.';
+    setMessage(t.note, 'event');
+
+    if (!trial.practice) {
+      t.rows.push(Object.assign(baseRow(trial, stock), {
+        checkpoint: t.k + 1, // the last decision before the sale
+        action: kind === 'stop' ? 'stop_loss_sell' : 'take_profit_sell',
+        shares: n,
+        price: fillC / 100,
+        cash: t.cash,
+        shares_held: 0,
+        portfolio_value: cashC / 100,
+        rating: '',
+        decision_ms: '',
+        timestamp: nowIso(),
+        stop_loss: '',
+        take_profit: '',
+      }));
+    }
+  }
+
   // ---- Animation between checkpoints ----
   // Every segment lasts SEGMENT_SECONDS whatever the timeframe. 1-minute row m
   // appears when elapsed >= (m - segStart) / (segEnd - segStart) * duration.
 
-  var anim = null;                                          // the running segment
-  var hold = { portrait: false, prompt: false, hidden: false }; // reasons to pause the clock
+  var anim = null; // the running segment
+  // Reasons to pause the clock: iPad upright, "End this session?" open, page hidden, Directions open.
+  var hold = { portrait: false, prompt: false, hidden: false, directions: false };
 
-  function isHeld() { return hold.portrait || hold.prompt || hold.hidden; }
+  function isHeld() { return hold.portrait || hold.prompt || hold.hidden || hold.directions; }
 
   function startSegment() {
     var trial = currentTrial();
@@ -457,6 +764,7 @@
     anim = {
       segStart: cp.cps[k],
       segEnd: k + 1 < cp.cps.length ? cp.cps[k + 1] : cp.end,
+      startTrial: JSON.parse(JSON.stringify(S.trial)), // what save() stores until the segment ends
       elapsed: 0,
       last: null,
       raf: 0,
@@ -478,7 +786,9 @@
     var duration = C.SEGMENT_SECONDS * 1000;
     var length = anim.segEnd - anim.segStart;
     var count = anim.elapsed >= duration ? length : Math.min(length, Math.floor(anim.elapsed / duration * length) + 1);
-    simChart.addMinutes(anim.segStart + count);
+    var upto = anim.segStart + count;
+    for (var m = simChart.shownMinutes(); m < upto; m++) checkOrders(m);
+    simChart.addMinutes(upto);
     updateSide();
 
     if (anim.elapsed >= duration) {
@@ -529,7 +839,7 @@
     var trial = currentTrial();
     var stock = stockFor(trial);
     rating = 0;
-    $('rating-stock').textContent = (trial.practice ? 'Practice stock' : 'Stock ' + trial.position + ' of 4') + ' (' + stock.ticker + ')';
+    $('rating-stock').textContent = (trial.practice ? 'Practice stock' : 'Stock ' + trial.position + ' of ' + STOCKS) + ' (' + stock.ticker + ')';
     document.querySelectorAll('.rating-btn').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
     $('rating-next').disabled = true;
     show('rating');
@@ -551,6 +861,7 @@
 
     S.trialIndex++;
     S.trial = null;
+    S.directions = 0; // Directions openings are counted per stock
     if (S.trialIndex < trialList(S.version).length) goTo('intro');
     else finishSession();
   });
@@ -563,15 +874,7 @@
     var valueC = cents(t.cash) + t.shares * cents(finalPrice);
     var value = valueC / 100;
     var ts = nowIso();
-    var base = {
-      participant_id: S.participantId,
-      version: S.version,
-      session_id: S.sessionId,
-      position: trial.position,
-      stock: stock.ticker,
-      stock_slot: trial.slot,
-      timeframe: trial.tf,
-    };
+    var base = baseRow(trial, stock);
     var ratingRow = Object.assign({}, base, {
       checkpoint: '',
       action: 'rating',
@@ -583,6 +886,8 @@
       rating: ratingValue,
       decision_ms: Math.round(performance.now() - ratingStart),
       timestamp: ts,
+      stop_loss: '',
+      take_profit: '',
     });
     var summary = Object.assign({}, base, {
       volatility_rating: ratingValue,
@@ -592,24 +897,58 @@
       final_value: value,
       final_pct_in_stock: round2(t.shares * cents(finalPrice) / valueC * 100),
       return_pct: round2((value / C.START_CASH - 1) * 100),
-      trades: t.trades,
+      trades: t.trades, // Buy and Sell decisions; automatic sales are counted below
       timestamp: ts,
+      stop_loss_used: t.stopUsed ? 1 : 0,
+      take_profit_used: t.targetUsed ? 1 : 0,
+      stop_loss_triggered: t.stopHits,
+      take_profit_triggered: t.targetHits,
+      directions_opened: S.directions || 0,
     });
     // A fixed batch id means a retry can never save this stock twice.
     Store.queue({ Actions: t.rows.concat([ratingRow]), Summary: [summary] }, S.sessionId + '-stock' + trial.position);
   }
 
+  // ===================================================================
+  // Thank-you screen (participant code and the optional survey link)
+  // ===================================================================
+
+  var finished = null; // the session just completed: { participantId, version, versionMode, sessionId }
+
   function finishSession() {
     logSession('completed');
-    var list = completedList();
+    var list = Store.completed();
     list.push({ participant_id: S.participantId, version: S.version, session_id: S.sessionId, timestamp: nowIso() });
     Store.set('sim.completed', list);
     // Auto mode moves on to the next version only when a session is completed.
     if (S.versionMode === 'auto') Store.setNextAutoVersion(S.version % 4 + 1);
+    finished = { participantId: S.participantId, version: S.version, versionMode: S.versionMode, sessionId: S.sessionId };
     Store.clearSession();
     S = null;
+    showThanks();
+  }
+
+  function surveyUrl() { return String(C.SURVEY_URL || '').trim(); }
+
+  function showThanks() {
+    $('thanks-code').textContent = finished.participantId;
+    $('survey-row').hidden = !surveyUrl();
+    $('survey-open').disabled = false;
     show('thanks');
   }
+
+  // Open the survey in this tab, with the participant code filled in
+  // (every PARTICIPANT_CODE in the link is replaced by the code).
+  $('survey-open').addEventListener('click', function () {
+    var url = surveyUrl();
+    if (!url || !finished) return;
+    $('survey-open').disabled = true;
+    Store.logSession(finished, 'survey_opened');
+    var target = url.split('PARTICIPANT_CODE').join(encodeURIComponent(finished.participantId));
+    // Give the Sessions row a moment to be sent. If it is not sent in time,
+    // it waits on this iPad and is sent the next time the site is opened.
+    Store.waitForSend(1500).then(function () { window.location.assign(target); });
+  });
 
   // ===================================================================
   // Hidden researcher exit: hold the top-left corner for 3 seconds
@@ -695,6 +1034,8 @@
 
   function showStart() {
     stopAnimation();
+    closeDirections();
+    finished = null;
     setInSession(false);
     show('start');
     renderStart();
@@ -741,7 +1082,13 @@
   // Start-up
   // ===================================================================
 
+  // Numbers in the instructions come from config.js.
   document.querySelectorAll('[data-start-cash]').forEach(function (el) { el.textContent = money(C.START_CASH).replace('.00', ''); });
+  document.querySelectorAll('[data-checkpoints]').forEach(function (el) { el.textContent = String(C.CHECKPOINTS); });
+  document.querySelectorAll('[data-practice-checkpoints]').forEach(function (el) { el.textContent = String(C.PRACTICE_CHECKPOINTS); });
+  document.querySelectorAll('[data-stock-count]').forEach(function (el) { el.textContent = NUMBER_WORDS[STOCKS] || String(STOCKS); });
+  document.querySelectorAll('[data-candle-figure]').forEach(function (el) { el.innerHTML = candleFigure(); });
+  buildDirections(); // after the lines above, so the copy has the same text
 
   S = loadSavedSession();
   if (S) showPaused();

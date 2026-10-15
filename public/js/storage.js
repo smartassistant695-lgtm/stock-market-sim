@@ -16,14 +16,17 @@
     sendError: 'sim.sendError', // the last sending error, shared with other tabs ('' or missing = no error)
   };
 
-  // Column order for each sheet (docs/EXPERIMENT.md section 7).
+  // Column order for each sheet (docs/EXPERIMENT.md section 7). New columns
+  // are always added at the end, so older rows keep their place.
+  // Keep in sync with TABS in api/save.js.
   var COLUMNS = {
     Actions: ['participant_id', 'version', 'session_id', 'position', 'stock', 'stock_slot', 'timeframe',
       'checkpoint', 'action', 'shares', 'price', 'cash', 'shares_held', 'portfolio_value', 'rating',
-      'decision_ms', 'timestamp'],
+      'decision_ms', 'timestamp', 'stop_loss', 'take_profit'],
     Summary: ['participant_id', 'version', 'session_id', 'position', 'stock', 'stock_slot', 'timeframe',
       'volatility_rating', 'final_price', 'final_cash', 'final_shares', 'final_value',
-      'final_pct_in_stock', 'return_pct', 'trades', 'timestamp'],
+      'final_pct_in_stock', 'return_pct', 'trades', 'timestamp',
+      'stop_loss_used', 'take_profit_used', 'stop_loss_triggered', 'take_profit_triggered', 'directions_opened'],
     Sessions: ['participant_id', 'version', 'version_mode', 'session_id', 'event', 'timestamp', 'device'],
   };
 
@@ -179,7 +182,9 @@
     fetch('/api/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ batchId: batch.batchId, sheets: batch.sheets }),
+      // completeRows again: a batch queued by an older version of the site
+      // gets the new columns (empty), so the server does not refuse it.
+      body: JSON.stringify({ batchId: batch.batchId, sheets: completeRows(batch.sheets) }),
       signal: controller ? controller.signal : undefined,
     })
       .then(function (r) {
@@ -218,6 +223,20 @@
   function retryNow() {
     failures = 0;
     flush();
+  }
+
+  // Resolves when the outbox is empty, or after ms milliseconds at most.
+  // Used before leaving the page (the survey link), so the last row has a
+  // chance to be sent first. Anything not sent stays in the outbox and is
+  // sent the next time a page of this site opens on this iPad.
+  function waitForSend(ms) {
+    var until = Date.now() + ms;
+    return new Promise(function (resolve) {
+      (function check() {
+        if (outbox().length === 0 || Date.now() >= until) resolve();
+        else setTimeout(check, 100);
+      })();
+    });
   }
 
   window.addEventListener('online', function () { retryNow(); });
@@ -314,6 +333,7 @@
   }
 
   // Sessions completed on this device: [{ participant_id, version, session_id, timestamp }]
+  // (participant_id is the participant code, for example "P-7F3K").
   function completed() { return get('sim.completed', []); }
 
   // iPad Safari reports itself as a Mac ("Macintosh"), so the user agent
@@ -325,7 +345,8 @@
   }
 
   // One row in the Sessions tab. s is the saved session (see experiment.js);
-  // event is 'started', 'completed', 'consent_declined', 'exited_by_researcher' or 'resumed'.
+  // event is 'started', 'completed', 'consent_declined', 'exited_by_researcher',
+  // 'resumed' or 'survey_opened'.
   function logSession(s, event) {
     queue({
       Sessions: [{
@@ -388,6 +409,7 @@
     queue: queue,
     flush: flush,
     retryNow: retryNow,
+    waitForSend: waitForSend,
     status: getStatus,
     onChange: onChange,
     toCSV: toCSV,

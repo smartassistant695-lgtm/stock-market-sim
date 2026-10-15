@@ -39,7 +39,6 @@
   justify-content: center;
   padding: 24px;
 }
-.screen-top { align-items: flex-start; padding-top: 12vh; } /* room for the on-screen keyboard */
 .card {
   width: 100%;
   max-width: 520px;
@@ -113,8 +112,8 @@
   .start-notes { margin-top: 48px; }
 }
 
-/* ---------- Calm text screens: continue, consent, participant number,
-   instructions, stock intro, thank-you, and the end-session question.
+/* ---------- Calm text screens: continue, consent, instructions, candle
+   lesson, stock intro, thank-you, and the end-session question.
    A serif heading, plain text, the site's buttons (.site-btn). ---------- */
 
 .calm { color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
@@ -147,6 +146,21 @@
 .calm .steps { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--hairline); }
 .calm .steps li { margin: 0; padding: 11px 0; border-bottom: 1px solid var(--hairline); }
 
+/* Candle lesson: the picture (drawn as SVG by experiment.js) and a few sentences. */
+.candle-figure { margin: 0 0 16px; }
+.candle-svg { display: block; width: 100%; max-width: 520px; height: auto; margin: 0 auto; }
+.lesson-text { margin: 0; }
+
+/* Thank-you: the participant code in a quiet line under a hairline. */
+.calm .card .thanks-code {
+  margin: 36px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--hairline);
+  color: var(--ink-3);
+  font-size: 15px;
+}
+.participant-code { color: var(--ink); font-weight: 600; letter-spacing: 0.02em; font-variant-numeric: lining-nums tabular-nums; }
+
 /* ---------- Trade screen ---------- */
 
 .trade { display: flex; height: 100%; }
@@ -178,9 +192,22 @@
 .side > div { padding: 10px 14px; border-bottom: 1px solid var(--border); }
 .side > .side-entry { border-bottom: 0; flex: 1; display: flex; flex-direction: column; gap: 8px; }
 
-.side-stock { display: flex; align-items: baseline; gap: 8px; }
+.side-stock { display: flex; align-items: center; gap: 8px; }
+.side > .side-stock { padding-top: 6px; padding-bottom: 6px; }
 .t-ticker { font-weight: 700; font-size: 16px; }
-.t-name { color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-name { flex: 1; min-width: 0; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Small secondary button in the panel ("Directions"). It looks 32px tall,
+   but the area that reacts to a tap is 46px. */
+.side-btn {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 14px;
+}
+.side-btn::after { content: ""; position: absolute; top: -7px; right: -4px; bottom: -7px; left: -4px; }
 
 .side-price { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .t-price { font-size: 28px; font-weight: 600; line-height: 1.2; }
@@ -207,7 +234,9 @@
 .entry-value { font-size: 22px; font-weight: 600; }
 .t-max { color: var(--muted); font-size: 13px; }
 
+.pad-area { position: relative; }
 .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.keypad.covered { visibility: hidden; } /* keeps its height while the steppers are shown */
 .key {
   min-height: 48px;
   border: 1px solid var(--control-border, #d1d4dc);
@@ -224,12 +253,44 @@
 .key:active { background: var(--panel); }
 .key:disabled { color: #b2b5be; background: #ffffff; }
 
-.trade-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.trade-buttons { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
 .trade-btn { min-width: 0; width: 100%; min-height: 48px; font-size: 16px; }
-.trade-hold { display: block; }
+#t-orders { font-size: 15px; font-weight: 500; }
+#t-orders[aria-expanded="true"] { background: var(--panel); border-color: var(--text); }
 
 .t-msg { min-height: 2.6em; font-size: 13px; color: var(--down); line-height: 1.3; }
 .t-msg.info { color: var(--muted); }
+.t-msg.event { color: var(--text); font-weight: 600; } /* a stop loss or take profit sold */
+
+/* Stop loss / take profit: two steppers in the keypad's place. */
+.orders {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  background: var(--bg);
+}
+.stepper { display: grid; grid-template-columns: 52px 1fr 52px; gap: 6px; }
+.step { min-height: 48px; font-size: 24px; line-height: 1; }
+.step-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  line-height: 1.2;
+}
+.step-label { color: var(--muted); font-size: 12px; }
+.step-choice { font-size: 16px; font-weight: 600; white-space: nowrap; }
+.order-result { margin: 4px 0 0; color: var(--muted); font-size: 13px; text-align: center; white-space: nowrap; }
 
 /* Smaller screens (for example a 10.2" iPad with Safari's bars showing). */
 @media (max-height: 760px) {
@@ -239,12 +300,14 @@
   .kv { line-height: 1.45; }
   .keypad { gap: 4px; }
   .key, .trade-btn, .entry { min-height: 44px; }
+  .orders { gap: 10px; }
   .entry-value { font-size: 20px; }
-  .t-msg { min-height: 2.4em; }
+  .t-msg { min-height: 2.6em; }
 }
 
 /* ---------- Rating ---------- */
 
+.rating-help { margin: -6px 0 0; color: var(--muted); font-size: 15px; }
 .rating { margin-top: 20px; }
 .rating-buttons { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
 .rating-btn {
@@ -285,6 +348,46 @@
 .exit-title { margin: 0 0 8px; font-size: 21px; font-weight: 600; }
 .exit-text { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.45; }
 .exit-box .btn-row { margin-top: 24px; }
+
+/* Directions: the steps and the candle lesson again (trading-platform dialog look).
+   Below the hidden exit area (z-index 50), so the researcher's hold still works. */
+.dir-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(19, 23, 34, 0.4);
+}
+.dir-box {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 640px;
+  max-height: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+}
+.dir-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 10px 10px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.dir-title { margin: 0; font-size: 17px; font-weight: 600; }
+.dir-close { min-width: 0; min-height: 44px; padding: 0 18px; }
+.dir-body { flex: 0 1 auto; min-height: 0; padding: 4px 18px 18px; font-size: 15px; line-height: 1.45; }
+.dir-body .steps { margin: 0; padding: 0; list-style: none; }
+.dir-body .steps li { margin: 0; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.dir-sub { margin: 18px 0 10px; font-size: 15px; font-weight: 600; }
+.dir-body .candle-figure { margin-bottom: 12px; }
+.dir-body .candle-svg { max-width: 460px; }
 
 /* Invisible press-and-hold area for the researcher (only during a session). */
 .exit-zone {

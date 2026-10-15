@@ -26,6 +26,7 @@ needs to allow `*.vercel.app`, and your keys stay hidden on the server.
 | `/simulation.html` | The experiment (start screen, no code) |
 | `/about.html` | About Us text |
 | `/market.html` | Live stock charts for visitors |
+| `/options.html` | Options Playground: a pretend-money calculator for call and put options (not part of the study) |
 | `/contact.html` | Contact form; messages go to the **Contact** tab of the Google Sheet |
 | `/researcher.html` | Researcher only (small link in the footer, needs the researcher code): version, sending status, CSV downloads |
 | `/builder.html` | Researcher only: builds the real experiment data from Alpaca |
@@ -40,7 +41,9 @@ needs to allow `*.vercel.app`, and your keys stay hidden on the server.
 | Footer: names, school, email, photo credit | `public/js/footer.js` | `EDIT THE FOOTER TEXT HERE` |
 | About Us text | `public/about.html` | `PASTE YOUR ABOUT US TEXT HERE` |
 | Consent text | `public/simulation.html` | `EDIT CONSENT TEXT BELOW` |
-| Timing, cash, number of checkpoints | `public/js/config.js` | comments next to each number |
+| Names on the thank-you screen (who removes answers) | `public/simulation.html` | `EDIT THE NAMES BELOW` |
+| Timing, cash, number of checkpoints, stop loss / take profit steps | `public/js/config.js` | comments next to each number |
+| Link to your Google Form survey | `public/js/config.js` | `SURVEY_URL` (see "Connect your Google Form" below) |
 
 To edit a file without installing anything: open it on github.com, click the
 pencil icon, make the change, and click **Commit changes**. Vercel puts the
@@ -130,7 +133,36 @@ Deploy**.
 Until you do this, the experiment runs on made-up placeholder prices so you can
 try it out.
 
-## Step 4. Running a participant
+## Step 4. Connect your Google Form (optional)
+
+At the end, the thank-you screen can show a button **Continue to the short
+survey** that opens your Google Form with the participant's code already
+filled in. Without a link there is no button.
+
+1. In Google Forms, add a **Short answer** question called `Participant code`.
+2. Click **More** (the three dots at the top right) **> Get pre-filled link**.
+3. Type `PARTICIPANT_CODE` in the "Participant code" question.
+4. Click **Get link**, then **Copy link**.
+5. Open `public/js/config.js`, find `SURVEY_URL: ''`, and paste the link
+   between the quotes, for example
+   `SURVEY_URL: 'https://docs.google.com/forms/d/e/.../viewform?usp=pp_url&entry.123456=PARTICIPANT_CODE',`.
+   Commit the change.
+
+The site replaces `PARTICIPANT_CODE` with each participant's code (for example
+`P-7F3K`), so the form answers and the trading data can be matched. The form
+opens in the same tab; when the participant is done, open `/simulation.html`
+again for the next participant.
+
+## Before real data collection
+
+The data columns changed (stop loss, take profit and Directions columns were
+added at the end). Google Sheets adds new column names to the end of an old
+header row, so before your first real participant **delete the old test tabs
+`Actions`, `Summary` and `Sessions`** in the Google Sheet (right-click the tab
+> Delete). They are made again, with the right header row, by the next saved
+row. Keep the `_batches` tab or delete it too; both are fine.
+
+## Step 5. Running a participant
 
 1. Turn the iPad to landscape and open `/simulation.html`. Under the
    **Begin** button, check that the line says "All results uploaded." and that
@@ -141,14 +173,24 @@ try it out.
    Researcher page locks again when the next session starts, so you enter the
    code again the next time you open it.
 3. Go back to `/simulation.html`, tap **Begin** and hand the iPad to the
-   participant. For the strongest lockdown, turn on Guided Access (Settings >
-   Accessibility > Guided Access, then triple-click the top button) or open
-   the site from a Home Screen icon (Share > Add to Home Screen).
-4. When they reach the thank-you screen, press and hold the **top-left
-   corner** of the screen for 3 seconds (no code). The page goes back to the
-   start screen, ready for the next participant. The same hold in the middle
-   of a session asks "End this session?".
-5. If the page is closed or refreshed by accident, open `/simulation.html`
+   participant. There is no participant number to type: the iPad gives each
+   participant an anonymous code such as `P-7F3K`. For the strongest
+   lockdown, turn on Guided Access (Settings > Accessibility > Guided Access,
+   then triple-click the top button) or open the site from a Home Screen icon
+   (Share > Add to Home Screen).
+4. The participant reads the consent form, the instructions and a short
+   "Reading the chart" lesson, trades a practice stock, then four stocks (the
+   chart stops 4 times per stock; a **Directions** button shows the
+   instructions again at any time; a stop loss or take profit is optional),
+   and rates each stock.
+5. The thank-you screen shows their participant code ("If you ever want your
+   answers removed, give this code to Noah or Jojo.") and, if you connected
+   a Google Form, the survey button. Press and hold the **top-left corner** of
+   the screen for 3 seconds (no code). The page goes back to the start screen,
+   ready for the next participant. The same hold in the middle of a session
+   asks "End this session?". If the participant went on to the survey, just
+   open `/simulation.html` again afterwards.
+6. If the page is closed or refreshed by accident, open `/simulation.html`
    again. It shows **Continue where you left off**.
 
 **Getting the data.** Rows appear in your Google Sheet after every stock, in
@@ -158,8 +200,11 @@ CSV** buttons that save files to the iPad's Files app (Downloads folder). If a
 send fails, the start screen says how many results are waiting, the
 Researcher page shows a red warning with the error and **Retry sending now**,
 and the iPad keeps retrying on its own. No code is needed to take part, so
-anyone who opens the site can add rows: use the participant numbers you hand
-out to find your participants' rows (`docs/EXPERIMENT.md`, section 7).
+anyone who opens the site can add rows: use the times of your sessions and the
+`device` column to find your participants' rows; the participant code links
+one person's rows and their survey answers (`docs/EXPERIMENT.md`, section 7).
+To remove someone's answers, delete the rows with their code in every tab
+(and in the form responses).
 
 ## If something fails
 
