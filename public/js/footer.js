@@ -14,8 +14,9 @@
   const FOOTER = {
     names: 'Noah and Jojo',          // {names}
     shortName: 'Noah & Jojo',        // first item of the "Noah & Jojo › Page" row
-    school: '[John L. Miller Great Neck North Highschool]',         // {school}
-    email: '[skaya1@student.gn.k12.ny.us or Johebshalom5@student.gn.k12.ny.us]',           // becomes a link once it contains an @
+    school: 'John L. Miller Great Neck North High School', // {school}
+    // Each address becomes its own email link. For two, write them with "or" between.
+    email: 'skaya1@student.gn.k12.ny.us or Johebshalom5@student.gn.k12.ny.us',
     year: '2026',                    // {year}
     photographer: 'Jamal Eid / NYSE', // {photographer}: also edit the credit in index.html
     photoLink: '#',                  // {photoLink}: the web page of the photo (# = no link yet)
@@ -97,19 +98,23 @@
     return a;
   }
 
-  // The contact sentence, with the email as a link when it is a real address.
+  // The contact sentence. Every email address in FOOTER.email becomes its
+  // own link; the words between them (like "or") stay plain text.
   function contactLine() {
     const p = make('p', 'footer-contact');
     const parts = FOOTER.contact.split('{email}');
     p.append(fill(parts[0]));
     if (parts.length > 1) {
-      if (FOOTER.email.includes('@')) {
-        const a = make('a', '', FOOTER.email);
-        a.href = 'mailto:' + FOOTER.email;
-        p.append(a);
-      } else {
-        p.append(FOOTER.email);
-      }
+      const pieces = FOOTER.email.split(/([^\s,;]+@[^\s,;]+)/);
+      pieces.forEach((piece, i) => {
+        if (i % 2 === 1) {
+          const a = make('a', '', piece);
+          a.href = 'mailto:' + piece;
+          p.append(a);
+        } else if (piece) {
+          p.append(piece);
+        }
+      });
       p.append(fill(parts.slice(1).join('{email}')));
     }
     return p;
