@@ -32,6 +32,11 @@ function createSimChart(container) {
       minBarSpacing: 0.1,             // a full day of 1-minute candles must fit
       shiftVisibleRangeOnNewBar: false, // we set the visible range ourselves
       lockVisibleTimeRangeOnResize: true,
+      // Show "Day 1", "Day 2", "Day 3" and times instead of real calendar
+      // dates, so nobody can look up which real stock the data came from.
+      tickMarkFormatter: function (time, type) {
+        return type <= 2 ? 'Day ' + dayNumber(time) : clock(time);
+      },
     },
     crosshair: {
       mode: LightweightCharts.CrosshairMode.Hidden,
@@ -39,7 +44,7 @@ function createSimChart(container) {
       horzLine: { visible: false, labelVisible: false },
     },
     // No scrolling or zooming: the participant only watches.
-    localization: { locale: 'en-US' }, // fixed, so the axis looks the same on every device
+    localization: { locale: 'en-US', timeFormatter: function (time) { return clock(time); } }, // fixed, so the axis looks the same on every device
     handleScroll: false,
     handleScale: false,
     kineticScroll: { touch: false, mouse: false },
@@ -54,6 +59,17 @@ function createSimChart(container) {
     wickDownColor: '#f23645',
     priceFormat: { type: 'price', precision: 2, minMove: 0.01 },
   });
+
+  // Times are "market clock" seconds (the UTC clock reads New York time).
+  function clock(time) {
+    var d = new Date(time * 1000);
+    return d.getUTCHours() + ':' + String(d.getUTCMinutes()).padStart(2, '0');
+  }
+  // 1, 2 or 3: which trading day of this stock a time falls on.
+  var dayOf = {};
+  function dayNumber(time) {
+    return dayOf[new Date(time * 1000).toISOString().slice(0, 10)] || '';
+  }
 
   var m1 = [];     // 1-minute rows [t, open, high, low, close]
   var tf = 1;      // minutes per candle
@@ -105,6 +121,10 @@ function createSimChart(container) {
     // Start a stock: show the first `shownMinutes` 1-minute rows as candles of `tfMinutes`.
     load: function (stock, tfMinutes, shownMinutes) {
       m1 = stock.m1;
+      dayOf = {};
+      for (var d = 0; d * DAY < m1.length; d++) {
+        dayOf[new Date(m1[d * DAY][0] * 1000).toISOString().slice(0, 10)] = d + 1;
+      }
       tf = tfMinutes;
       slots = Math.ceil(DAY / tf);
       bars = [];
