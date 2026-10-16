@@ -1012,6 +1012,42 @@
   });
 
   // ===================================================================
+  // "Home" buttons: leaving in the middle asks first, because the session
+  // cannot be continued afterwards. Stocks already finished were already
+  // sent; the Sessions tab gets a "left_early" row so they can be left out.
+  // ===================================================================
+
+  function askHome() {
+    if (!S) { leaveToHome(); return; } // nothing in progress (thank-you, did not agree)
+    hold.prompt = true; // the chart waits while the question is open
+    $('home-prompt').hidden = false;
+  }
+
+  function closeHomePrompt() {
+    $('home-prompt').hidden = true;
+    hold.prompt = false;
+  }
+
+  function leaveToHome() {
+    if (S) {
+      stopAnimation();
+      logSession('left_early');
+      Store.clearSession();
+      S = null;
+    }
+    setInSession(false);
+    // Give the "left_early" row a moment to be sent (like the survey link);
+    // anything not sent yet goes the next time the simulation opens here.
+    Store.waitForSend(1500).then(function () { window.location.assign('index.html'); });
+  }
+
+  document.querySelectorAll('[data-home]').forEach(function (b) {
+    b.addEventListener('click', askHome);
+  });
+  $('home-stay').addEventListener('click', closeHomePrompt);
+  $('home-leave').addEventListener('click', leaveToHome);
+
+  // ===================================================================
   // "Continue where you left off" (page opened with an unfinished session)
   // ===================================================================
 

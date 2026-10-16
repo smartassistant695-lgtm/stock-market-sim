@@ -63,6 +63,7 @@
         <div class="btn-row">
           <button id="consent-yes" class="site-btn" type="button">I agree</button>
           <button id="consent-no" class="site-btn site-btn-outline" type="button">I do not agree</button>
+          <button class="site-btn site-btn-outline" type="button" data-home>Home</button>
         </div>
       </div>
     </section>
@@ -72,6 +73,9 @@
       <div class="card">
         <h1 class="sim-h1">Thank you</h1>
         <p>You chose not to take part. Thank you for your time.</p>
+        <div class="btn-row">
+          <button class="site-btn site-btn-outline" type="button" data-home>Home</button>
+        </div>
       </div>
     </section>
 
@@ -98,6 +102,7 @@
         <p class="scroll-more">Scroll to read the rest.</p>
         <div class="btn-row">
           <button id="instructions-next" class="site-btn" type="button">Continue</button>
+          <button class="site-btn site-btn-outline" type="button" data-home>Home</button>
         </div>
       </div>
     </section>
@@ -120,6 +125,7 @@
         <p class="scroll-more">Scroll to read the rest.</p>
         <div class="btn-row">
           <button id="lesson-next" class="site-btn" type="button">Continue</button>
+          <button class="site-btn site-btn-outline" type="button" data-home>Home</button>
         </div>
       </div>
     </section>
@@ -132,6 +138,7 @@
         <div class="btn-row">
           <button id="intro-start" class="site-btn" type="button">Start</button>
           <button class="site-btn site-btn-outline" type="button" data-directions>Directions</button>
+          <button class="site-btn site-btn-outline" type="button" data-home>Home</button>
         </div>
       </div>
     </section>
@@ -147,6 +154,7 @@
           <div class="side-stock">
             <span id="t-ticker" class="t-ticker"></span>
             <span id="t-name" class="t-name"></span>
+            <button id="t-home" class="btn btn-secondary side-btn" type="button" data-home>Home</button>
             <button id="t-directions" class="btn btn-secondary side-btn" type="button" data-directions>Directions</button>
           </div>
           <div class="side-price">
@@ -239,6 +247,7 @@
         <div class="btn-row">
           <button id="rating-next" class="btn" type="button" disabled>Continue</button>
           <button class="btn btn-secondary" type="button" data-directions>Directions</button>
+          <button class="btn btn-secondary" type="button" data-home>Home</button>
         </div>
       </div>
     </section>
@@ -255,6 +264,9 @@
         <!-- EDIT THE NAMES BELOW if someone else handles removal requests -->
         <p class="thanks-code">Your participant code: <span id="thanks-code" class="participant-code"></span>.
           If you ever want your answers removed, give this code to Noah or Jojo.</p>
+        <div class="btn-row">
+          <button class="site-btn site-btn-outline" type="button" data-home>Home</button>
+        </div>
       </div>
     </section>
   </main>
@@ -268,6 +280,18 @@
       <div class="btn-row">
         <button id="exit-end" class="site-btn" type="button">End session</button>
         <button id="exit-cancel" class="site-btn site-btn-outline" type="button">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- "Home" during the study: asks first, because the session cannot be continued afterwards. -->
+  <div id="home-prompt" class="exit-overlay calm" role="dialog" aria-modal="true" aria-labelledby="home-title" hidden>
+    <div class="exit-box">
+      <h2 id="home-title" class="exit-title">Leave the simulation?</h2>
+      <p class="exit-text">Your progress won&rsquo;t be saved, and you would have to start over.</p>
+      <div class="btn-row">
+        <button id="home-leave" class="site-btn" type="button">Leave</button>
+        <button id="home-stay" class="site-btn site-btn-outline" type="button">Stay</button>
       </div>
     </div>
   </div>

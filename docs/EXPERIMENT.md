@@ -241,6 +241,12 @@ Sessions tab records which it was (`version_mode`: `auto` or `manual`).
 - On the thank-you and "did not agree" screens the hold goes straight back to
   the start screen, ready for the next participant.
 
+**Home button.** Every participant screen has a **Home** button. During a session it
+first asks "Leave the simulation? Your progress won't be saved, and you would have to
+start over." (the chart waits while the question is open). **Leave** logs `left_early`,
+discards the session and opens the Home page; **Stay** carries on. On the thank-you and
+"did not agree" screens it goes straight to the Home page.
+
 **Resume.** If the page is refreshed or closed during a session, opening
 `simulation.html` again shows "Continue where you left off" with a
 **Continue** button (no code). Continue logs `resumed` and restarts the current
@@ -331,7 +337,8 @@ directions_opened`.
 **Sessions** (session events):
 `participant_id, version, version_mode, session_id, event, timestamp, device`.
 `event` is `consent_declined`, `started` (after "I agree"), `completed`,
-`exited_by_researcher`, `resumed` or `survey_opened`.
+`exited_by_researcher`, `resumed`, `survey_opened` or `left_early` (the participant
+tapped Home and chose Leave; stocks finished before that were already sent).
 
 ## 8. iPad requirements
 
