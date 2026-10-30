@@ -93,7 +93,6 @@
             <li>The chart stops <span class="num" data-checkpoints>4</span> times for each of the <span data-stock-count>four</span> stocks
               (<span class="num" data-practice-checkpoints>2</span> times in the practice). Each time, enter a number of shares
               on the keypad and tap <strong>Buy</strong> or <strong>Sell</strong>, or tap <strong>Hold</strong> to do nothing.</li>
-            <li>Optional: set a stop loss or take profit to sell automatically if the price reaches a level you choose.</li>
             <li>After each stock you will answer one question about it.</li>
             <li>Try to end with as much money as you can.</li>
             <li>Tap <strong>Directions</strong> at any time to see these steps again.</li>
@@ -165,8 +164,6 @@
             <div class="kv"><span class="label">Cash</span><span id="t-cash" class="num"></span></div>
             <div class="kv"><span class="label">Shares held</span><span id="t-held" class="num"></span></div>
             <div class="kv"><span class="label">Total value</span><span id="t-value" class="num"></span></div>
-            <div class="kv"><span class="label">Stop loss</span><span id="t-stop" class="num"></span></div>
-            <div class="kv"><span class="label">Take profit</span><span id="t-target" class="num"></span></div>
           </div>
           <div id="t-status" class="t-status"></div>
           <div class="side-entry">
@@ -175,8 +172,6 @@
               <span id="t-entry" class="entry-value num"></span>
             </div>
             <div id="t-max" class="t-max num"></div>
-            <!-- The keypad, or (after tapping "Stop loss / Take profit") the stop loss and
-                 take profit steppers in the same place, so the panel never changes height. -->
             <div class="pad-area">
               <div class="keypad" id="keypad">
                 <button class="key" type="button" data-key="1">1</button>
@@ -192,26 +187,7 @@
                 <button class="key" type="button" data-key="0">0</button>
                 <button class="key key-word" type="button" data-key="delete">Delete</button>
               </div>
-              <div id="orders" class="orders" hidden>
-                <div class="order" data-order="stop">
-                  <div class="stepper">
-                    <button class="key step" type="button" data-step="-1" aria-label="Lower stop loss">&minus;</button>
-                    <div class="step-value"><span class="step-label">Stop loss</span><span id="stop-choice" class="step-choice num"></span></div>
-                    <button class="key step" type="button" data-step="1" aria-label="Raise stop loss">+</button>
-                  </div>
-                  <p id="stop-result" class="order-result num"></p>
-                </div>
-                <div class="order" data-order="target">
-                  <div class="stepper">
-                    <button class="key step" type="button" data-step="-1" aria-label="Lower take profit">&minus;</button>
-                    <div class="step-value"><span class="step-label">Take profit</span><span id="target-choice" class="step-choice num"></span></div>
-                    <button class="key step" type="button" data-step="1" aria-label="Raise take profit">+</button>
-                  </div>
-                  <p id="target-result" class="order-result num"></p>
-                </div>
-              </div>
             </div>
-            <button id="t-orders" class="btn btn-secondary trade-btn" type="button" aria-expanded="false" aria-controls="orders">Stop loss / Take profit</button>
             <div class="trade-buttons">
               <button id="t-buy" class="btn trade-btn" type="button">Buy</button>
               <button id="t-sell" class="btn trade-btn" type="button">Sell</button>
@@ -236,12 +212,10 @@
             <button class="rating-btn num" type="button" data-rating="3">3</button>
             <button class="rating-btn num" type="button" data-rating="4">4</button>
             <button class="rating-btn num" type="button" data-rating="5">5</button>
-            <button class="rating-btn num" type="button" data-rating="6">6</button>
-            <button class="rating-btn num" type="button" data-rating="7">7</button>
           </div>
           <div class="rating-ends">
             <span>1 = Very stable</span>
-            <span>7 = Very volatile</span>
+            <span>5 = Very volatile</span>
           </div>
         </div>
         <div class="btn-row">

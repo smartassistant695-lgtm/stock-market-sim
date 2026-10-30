@@ -9,12 +9,6 @@ window.CONFIG = {
   RIGHT_PADDING: 0.05,          // empty space right of the newest candle, as a fraction of one trading day
   DATA_URL: 'data/stocks.json',
 
-  // Stop loss / take profit choices on the trade screen, in percent of the current price.
-  // The participant steps through them with - and +: 2%, 4%, 6% ... up to the maximum.
-  ORDER_STEP_PCT: 2,
-  STOP_LOSS_MAX_PCT: 20,        // stop loss: Off, -2%, -4% ... -20% (below the current price)
-  TAKE_PROFIT_MAX_PCT: 30,      // take profit: Off, +2%, +4% ... +30% (above the current price)
-
   // Link to your short Google Form, shown as a button on the thank-you screen.
   // Leave it empty ('') and there is no survey button.
   // How to get it:

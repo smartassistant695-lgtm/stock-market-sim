@@ -14,7 +14,7 @@
   var C = window.CONFIG;
   var DAY = C.SESSION_MINUTES; // 390 one-minute rows per trading day
   var STOCKS = C.LATIN_SQUARE[1].length; // stocks per session (4)
-  var FORMAT = 2; // saved sessions from an older version of this page (another format) are not resumed
+  var FORMAT = 3; // saved sessions from an older version of this page (another format) are not resumed
 
   // ===================================================================
   // Small helpers
@@ -165,10 +165,7 @@
   //   versionMode ('auto' | 'manual'),
   //   screen: 'consent' | 'instructions' | 'lesson' | 'intro' | 'trade' | 'rating',
   //   trialIndex: 0 = practice, 1-4 = stocks,
-  //   trial: { k (checkpoint index), phase ('decision' | 'animating'), cash, shares, trades, rows,
-  //            stop, target (active stop loss / take profit price, or null),
-  //            stopUsed, targetUsed (1 once one was set), stopHits, targetHits (automatic sales),
-  //            note (message about an automatic sale, shown until the next decision) },
+  //   trial: { k (checkpoint index), phase ('decision' | 'animating'), cash, shares, trades, rows },
   //   directions: times Directions was opened for the current stock (its intro, trade and rating screens),
   //   createdAt
   // }
@@ -176,8 +173,7 @@
 
   // During a segment of chart animation, the trial is saved as it was when
   // the segment started. After a refresh the segment replays from its start
-  // with the same cash, shares and orders, so a stop loss or take profit that
-  // sold during it sells again at the same minute and price.
+  // with the same cash and shares.
   function save() {
     if (!S) return;
     if (anim && anim.startTrial) Store.saveSession(Object.assign({}, S, { trial: anim.startTrial }));
@@ -313,7 +309,6 @@
   $('intro-start').addEventListener('click', function () {
     S.trial = {
       k: 0, phase: 'decision', cash: C.START_CASH, shares: 0, trades: 0, rows: [],
-      stop: null, target: null, stopUsed: 0, targetUsed: 0, stopHits: 0, targetHits: 0, note: '',
     };
     goTo('trade');
   });
@@ -444,7 +439,6 @@
     $('t-ticker').textContent = stock.ticker;
     $('t-name').textContent = stock.name;
     setMessage('');
-    showOrders(false);
 
     if (t.phase === 'animating') startSegment();
     else startDecision();
@@ -464,25 +458,21 @@
     $('t-cash').textContent = money(t.cash);
     $('t-held').textContent = String(t.shares);
     $('t-value').textContent = money((cents(t.cash) + t.shares * cents(price)) / 100);
-    $('t-stop').textContent = t.stop ? money(t.stop) : 'Off';
-    $('t-target').textContent = t.target ? money(t.target) : 'Off';
     $('t-entry').textContent = entry === '' ? '0' : entry;
     $('t-max').textContent = 'Max you can buy: ' + Math.floor(cents(t.cash) / cents(price));
   }
 
-  // kind: '' (a problem, red), 'info' (grey) or 'event' (an automatic sale, dark).
+  // kind: '' (a problem, red) or 'info' (grey).
   function setMessage(text, kind) {
     var m = $('t-msg');
     m.textContent = text;
     m.className = 't-msg' + (kind === true ? ' info' : (kind ? ' ' + kind : ''));
   }
 
-  // Keypad, stop loss / take profit and Buy/Sell/Hold only work while a decision is open.
+  // Keypad and Buy/Sell/Hold only work while a decision is open.
   function setTradingOpen(open) {
     tradingOpen = open;
-    document.querySelectorAll('#keypad .key, #t-orders, #t-buy, #t-sell, #t-hold').forEach(function (b) { b.disabled = !open; });
-    if (!open) showOrders(false);
-    renderOrderChoices();
+    document.querySelectorAll('#keypad .key, #t-buy, #t-sell, #t-hold').forEach(function (b) { b.disabled = !open; });
   }
 
   function startDecision() {
@@ -490,10 +480,7 @@
     var n = checkpointsFor(trial).cps.length;
     entry = '';
     $('t-status').textContent = 'Decision ' + (S.trial.k + 1) + ' of ' + n;
-    // An automatic sale during the last segment stays in view until the participant acts.
-    setMessage(S.trial.note || '', 'event');
-    resetOrderChoices();
-    showOrders(false);
+    setMessage('');
     setTradingOpen(true);
     updateSide();
     decisionStart = performance.now();
@@ -510,89 +497,6 @@
     if (entry === '0') entry = '';
     setMessage('');
     updateSide();
-  });
-
-  // ---- Stop loss / take profit choices ----
-  // Each stepper has a list of choices sorted by price, low to high:
-  //   stop loss:   -20% ... -4%, -2%, Off      (Off is next to the current price)
-  //   take profit: Off, +2%, +4% ... +30%
-  // An order that is already active is in the list as "Keep $45.12" at its own
-  // price, and the stepper starts there; otherwise it starts at Off. The
-  // percent levels are worked out from the current price.
-
-  var choice = { stop: null, target: null }; // { list, i } for each stepper
-  var ordersOpen = false;                    // steppers shown instead of the keypad
-
-  function orderChoices(which, priceC, activeC) {
-    var list = [];
-    var maxPct = which === 'stop' ? C.STOP_LOSS_MAX_PCT : C.TAKE_PROFIT_MAX_PCT;
-    for (var pct = C.ORDER_STEP_PCT; pct <= maxPct; pct += C.ORDER_STEP_PCT) {
-      var p = Math.round(priceC * (which === 'stop' ? 100 - pct : 100 + pct) / 100);
-      var ok = which === 'stop' ? p > 0 && p < priceC : p > priceC;
-      if (ok && p !== activeC) list.push({ kind: 'level', pct: pct, priceC: p });
-    }
-    if (activeC) list.push({ kind: 'keep', priceC: activeC });
-    list.sort(function (a, b) { return a.priceC - b.priceC; });
-    if (which === 'stop') list.push({ kind: 'off' });
-    else list.unshift({ kind: 'off' });
-    return list;
-  }
-
-  function resetOrderChoices() {
-    var priceC = cents(simChart.lastPrice());
-    ['stop', 'target'].forEach(function (which) {
-      var activeC = S.trial[which] ? cents(S.trial[which]) : 0;
-      var list = orderChoices(which, priceC, activeC);
-      var start = 0;
-      list.forEach(function (o, i) { if (o.kind === (activeC ? 'keep' : 'off')) start = i; });
-      choice[which] = { list: list, i: start };
-    });
-    renderOrderChoices();
-  }
-
-  function chosen(which) { return choice[which].list[choice[which].i]; }
-
-  function renderOrderChoices() {
-    if (!choice.stop) return;
-    ['stop', 'target'].forEach(function (which) {
-      var c = choice[which];
-      var o = chosen(which);
-      var isStop = which === 'stop';
-      $(which + '-choice').textContent = o.kind === 'off' ? 'Off'
-        : o.kind === 'keep' ? 'Keep ' + money(o.priceC / 100)
-          : (isStop ? '−' : '+') + o.pct + '%';
-      $(which + '-result').textContent = o.kind === 'off'
-        ? (isStop ? 'No stop loss' : 'No take profit')
-        : (isStop ? 'Sell if price falls to ' : 'Sell if price rises to ') + money(o.priceC / 100);
-      var row = document.querySelector('.order[data-order="' + which + '"]');
-      row.querySelector('[data-step="-1"]').disabled = !tradingOpen || c.i === 0;
-      row.querySelector('[data-step="1"]').disabled = !tradingOpen || c.i === c.list.length - 1;
-    });
-  }
-
-  $('orders').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-step]');
-    if (!b || !tradingOpen) return;
-    var which = b.closest('.order').getAttribute('data-order');
-    var c = choice[which];
-    c.i = Math.max(0, Math.min(c.list.length - 1, c.i + Number(b.getAttribute('data-step'))));
-    renderOrderChoices();
-  });
-
-  // The steppers take the keypad's place (same height, so nothing moves).
-  function showOrders(open) {
-    ordersOpen = open;
-    $('orders').hidden = !open;
-    $('keypad').classList.toggle('covered', open);
-    $('t-orders').setAttribute('aria-expanded', String(open));
-    $('t-orders').textContent = open ? 'Back to keypad' : 'Stop loss / Take profit';
-  }
-
-  $('t-orders').addEventListener('click', function () {
-    if (!tradingOpen) return;
-    showOrders(!ordersOpen);
-    if (ordersOpen) setMessage('Your choice is used when you tap Buy, Sell or Hold.', 'info');
-    else setMessage(S.trial.note || '', 'event');
   });
 
   $('t-buy').addEventListener('click', function () { act('buy'); });
@@ -613,7 +517,6 @@
   }
 
   // One action per checkpoint. Invalid entries show a message and do not advance.
-  // The stop loss / take profit choices are applied together with the action.
   function act(action) {
     if (!tradingOpen) return;
     var trial = currentTrial();
@@ -646,26 +549,6 @@
     }
     t.cash = cashC / 100;
 
-    // Stop loss and take profit: Off clears an order, Keep leaves it, a level sets a new price.
-    // Without shares there is nothing to sell, so both are cleared.
-    var before = { stop: t.stop, target: t.target };
-    var wanted = false;
-    ['stop', 'target'].forEach(function (which) {
-      var o = chosen(which);
-      if (o.kind !== 'off') wanted = true;
-      t[which] = o.kind === 'off' ? null : o.priceC / 100;
-    });
-    if (t.shares === 0) { t.stop = null; t.target = null; }
-    if (t.stop) t.stopUsed = 1;
-    if (t.target) t.targetUsed = 1;
-    if (t.shares === 0 && wanted) {
-      done += ' No shares, so no stop loss or take profit.';
-    } else {
-      if (t.stop !== before.stop) done += ' Stop loss: ' + (t.stop ? money(t.stop) : 'off') + '.';
-      if (t.target !== before.target) done += ' Take profit: ' + (t.target ? money(t.target) : 'off') + '.';
-    }
-    t.note = '';
-
     if (!trial.practice) {
       t.rows.push(Object.assign(baseRow(trial, stock), {
         checkpoint: t.k + 1,
@@ -678,8 +561,6 @@
         rating: '',
         decision_ms: Math.round(performance.now() - decisionStart),
         timestamp: nowIso(),
-        stop_loss: t.stop || '',
-        take_profit: t.target || '',
       }));
     }
 
@@ -688,60 +569,6 @@
     save();
     startSegment();
     setMessage(done, true);
-  }
-
-  // Stop loss / take profit check for 1-minute row m (just revealed). Rows are
-  // checked one by one in order, so the result is the same in every timeframe.
-  //   opens at or below the stop:    sell everything at the open (the price jumped past the stop)
-  //   opens at or above the target:  sell everything at the open
-  //   low reaches the stop:          sell everything at the stop price
-  //   high reaches the target:       sell everything at the target price
-  // If both the stop and the target are inside the same minute, the stop wins
-  // (the careful choice: we cannot know which came first within the minute).
-  function checkOrders(m) {
-    var t = S.trial;
-    if (t.shares === 0 || (!t.stop && !t.target)) return;
-    var trial = currentTrial();
-    var stock = stockFor(trial);
-    var row = stock.m1[m];
-    var openC = cents(row[1]), highC = cents(row[2]), lowC = cents(row[3]);
-    var stopC = t.stop ? cents(t.stop) : 0;
-    var targetC = t.target ? cents(t.target) : 0;
-    var kind = '';
-    var fillC = 0;
-    if (stopC && openC <= stopC) { kind = 'stop'; fillC = openC; }
-    else if (targetC && openC >= targetC) { kind = 'target'; fillC = openC; }
-    else if (stopC && lowC <= stopC) { kind = 'stop'; fillC = stopC; }
-    else if (targetC && highC >= targetC) { kind = 'target'; fillC = targetC; }
-    if (!kind) return;
-
-    var n = t.shares;
-    var cashC = cents(t.cash) + n * fillC;
-    t.cash = cashC / 100;
-    t.shares = 0;
-    t.stop = null;
-    t.target = null;
-    if (kind === 'stop') t.stopHits++;
-    else t.targetHits++;
-    t.note = (kind === 'stop' ? 'Stop loss' : 'Take profit') + ': sold ' + plural(n, 'share') + ' at ' + money(fillC / 100) + '.';
-    setMessage(t.note, 'event');
-
-    if (!trial.practice) {
-      t.rows.push(Object.assign(baseRow(trial, stock), {
-        checkpoint: t.k + 1, // the last decision before the sale
-        action: kind === 'stop' ? 'stop_loss_sell' : 'take_profit_sell',
-        shares: n,
-        price: fillC / 100,
-        cash: t.cash,
-        shares_held: 0,
-        portfolio_value: cashC / 100,
-        rating: '',
-        decision_ms: '',
-        timestamp: nowIso(),
-        stop_loss: '',
-        take_profit: '',
-      }));
-    }
   }
 
   // ---- Animation between checkpoints ----
@@ -787,7 +614,6 @@
     var length = anim.segEnd - anim.segStart;
     var count = anim.elapsed >= duration ? length : Math.min(length, Math.floor(anim.elapsed / duration * length) + 1);
     var upto = anim.segStart + count;
-    for (var m = simChart.shownMinutes(); m < upto; m++) checkOrders(m);
     simChart.addMinutes(upto);
     updateSide();
 
@@ -886,8 +712,6 @@
       rating: ratingValue,
       decision_ms: Math.round(performance.now() - ratingStart),
       timestamp: ts,
-      stop_loss: '',
-      take_profit: '',
     });
     var summary = Object.assign({}, base, {
       volatility_rating: ratingValue,
@@ -897,12 +721,8 @@
       final_value: value,
       final_pct_in_stock: round2(t.shares * cents(finalPrice) / valueC * 100),
       return_pct: round2((value / C.START_CASH - 1) * 100),
-      trades: t.trades, // Buy and Sell decisions; automatic sales are counted below
+      trades: t.trades, // Buy and Sell decisions
       timestamp: ts,
-      stop_loss_used: t.stopUsed ? 1 : 0,
-      take_profit_used: t.targetUsed ? 1 : 0,
-      stop_loss_triggered: t.stopHits,
-      take_profit_triggered: t.targetHits,
       directions_opened: S.directions || 0,
     });
     // A fixed batch id means a retry can never save this stock twice.

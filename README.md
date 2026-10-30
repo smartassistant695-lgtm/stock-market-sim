@@ -42,7 +42,7 @@ needs to allow `*.vercel.app`, and your keys stay hidden on the server.
 | About Us text | `public/about.html` | `PASTE YOUR ABOUT US TEXT HERE` |
 | Consent text | `public/simulation.html` | `EDIT CONSENT TEXT BELOW` |
 | Names on the thank-you screen (who removes answers) | `public/simulation.html` | `EDIT THE NAMES BELOW` |
-| Timing, cash, number of checkpoints, stop loss / take profit steps | `public/js/config.js` | comments next to each number |
+| Timing, cash, number of checkpoints | `public/js/config.js` | comments next to each number |
 | Link to your Google Form survey | `public/js/config.js` | `SURVEY_URL` (see "Connect your Google Form" below) |
 
 To edit a file without installing anything: open it on github.com, click the
@@ -155,8 +155,8 @@ again for the next participant.
 
 ## Before real data collection
 
-The data columns changed (stop loss, take profit and Directions columns were
-added at the end). Google Sheets adds new column names to the end of an old
+The data columns changed (the rating is now 1-5, the stop loss / take profit
+columns were removed and a Directions column was added). Google Sheets adds new column names to the end of an old
 header row, so before your first real participant **delete the old test tabs
 `Actions`, `Summary` and `Sessions`** in the Google Sheet (right-click the tab
 > Delete). They are made again, with the right header row, by the next saved
@@ -181,8 +181,7 @@ row. Keep the `_batches` tab or delete it too; both are fine.
 4. The participant reads the consent form, the instructions and a short
    "Reading the chart" lesson, trades a practice stock, then four stocks (the
    chart stops 4 times per stock; a **Directions** button shows the
-   instructions again at any time; a stop loss or take profit is optional),
-   and rates each stock.
+   instructions again at any time), and rates each stock from 1 to 5.
 5. The thank-you screen shows their participant code ("If you ever want your
    answers removed, give this code to Noah or Jojo.") and, if you connected
    a Google Form, the survey button. Press and hold the **top-left corner** of

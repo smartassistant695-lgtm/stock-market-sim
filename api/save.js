@@ -22,11 +22,11 @@ const MAX_BYTES = 1000000;    // about 1 MB; one stock's data is far smaller
 const TABS = {
   Actions: ['participant_id', 'version', 'session_id', 'position', 'stock', 'stock_slot', 'timeframe',
     'checkpoint', 'action', 'shares', 'price', 'cash', 'shares_held', 'portfolio_value', 'rating',
-    'decision_ms', 'timestamp', 'stop_loss', 'take_profit'],
+    'decision_ms', 'timestamp'],
   Summary: ['participant_id', 'version', 'session_id', 'position', 'stock', 'stock_slot', 'timeframe',
     'volatility_rating', 'final_price', 'final_cash', 'final_shares', 'final_value',
     'final_pct_in_stock', 'return_pct', 'trades', 'timestamp',
-    'stop_loss_used', 'take_profit_used', 'stop_loss_triggered', 'take_profit_triggered', 'directions_opened'],
+    'directions_opened'],
   Sessions: ['participant_id', 'version', 'version_mode', 'session_id', 'event', 'timestamp', 'device'],
   Test: ['timestamp', 'message', 'screen', 'device'],
   Contact: ['timestamp', 'name', 'email', 'message'], // contact.html

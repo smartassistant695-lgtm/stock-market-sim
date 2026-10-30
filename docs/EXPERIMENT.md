@@ -8,8 +8,8 @@ research paper.
 
 - **Independent variable:** candle timeframe: 1-minute, 5-minute, 10-minute, 1-hour.
 - **Dependent variables:** trading behavior (number of trades, shares bought and
-  sold, final percent of portfolio held in stock, final portfolio value, use of
-  stop loss and take profit) and perceived volatility (one 1-7 rating per stock).
+  sold, final percent of portfolio held in stock, final portfolio value) and
+  perceived volatility (one 1-5 rating per stock).
 - **Within-subjects:** every participant trades 4 stocks, each at a different
   timeframe.
 - **Counterbalancing:** a 4x4 Graeco-Latin square (`public/js/config.js`,
@@ -90,8 +90,7 @@ Stock = {
 - **Practice stock** (excluded from data): day 1 history, then 2 checkpoints
   (`PRACTICE_CHECKPOINTS`) at offsets `round(k * 390 / 2)` (0, 195) in day 2,
   animating to the day 2 close. Timeframe 15m (not one of the tested
-  conditions). Stop loss and take profit work as in the real stocks. It ends
-  with the same rating question for practice. Nothing is logged.
+  conditions). It ends with the same rating question for practice. Nothing is logged.
 - All of these numbers come from `public/js/config.js`; the screens ("Decision
   2 of 4", "The chart stops 4 times") are worked out from it.
 
@@ -108,51 +107,6 @@ Stock = {
   whole cents.
 - After the final segment: final value at the day 3 close, and final percent in
   stock = shares x final price / final value x 100.
-
-### Stop loss and take profit (optional)
-
-- At each decision the participant may tap **Stop loss / Take profit**. Two
-  steppers take the keypad's place (tap **Back to keypad** to type shares
-  again). Each has large − and + buttons and shows the resulting price:
-  - Stop loss: Off, −2%, −4% ... −20% of the current price ("Sell if price falls
-    to $45.12").
-  - Take profit: Off, +2%, +4% ... +30% of the current price ("Sell if price
-    rises to $52.30").
-  - The level price is `current price x (100 ± p) / 100`, rounded to the
-    nearest cent (half a cent rounds up). The steps and maximums are
-    `ORDER_STEP_PCT`, `STOP_LOSS_MAX_PCT` and `TAKE_PROFIT_MAX_PCT` in
-    `config.js`.
-  - − always means a lower price and + a higher price. Off sits next to the
-    current price: for a stop loss, + from −2% goes to Off; for a take profit,
-    − from +2% goes to Off.
-  - If an order is already active from an earlier decision, its stepper starts
-    at "Keep $45.12" (its price, placed in the list by price). − and + move to
-    Off or to the percent levels of the current price.
-- The choices are applied together with the Buy, Sell or Hold of that decision
-  (one decision = one Actions row). Off clears an order, Keep leaves it, a level
-  sets a new price. If the participant holds 0 shares after the action, both
-  orders are cleared ("No shares, so no stop loss or take profit.").
-- Active orders stay through the following segments until they sell or are
-  changed. The side panel always shows them (Stop loss / Take profit: a price
-  or Off).
-- **Trigger rule.** During the animation, every newly revealed 1-minute row m
-  of `stock.m1` is checked in order while shares > 0 (so the result is the same
-  in every timeframe and at any frame rate). With o, h, l = that minute's open,
-  high and low:
-  1. a stop loss is set and o <= stop: sell all shares at o (the price jumped
-     past the stop, for example overnight);
-  2. else a take profit is set and o >= target: sell all at o;
-  3. else a stop loss is set and l <= stop: sell all at the stop price;
-  4. else a take profit is set and h >= target: sell all at the target price.
-
-  If the stop and the target are both reached inside the same minute, the stop
-  loss wins (the conservative choice: 1-minute data cannot show which came
-  first). After a sale: shares = 0, cash += shares x fill price, both orders are
-  cleared, the panel says "Stop loss: sold 120 shares at $45.10." (or "Take
-  profit: ..."), and the animation goes on. The message stays until the
-  participant's next action.
-- An automatic sale is not counted in `trades` (which counts Buy and Sell
-  decisions); it is counted in `stop_loss_triggered` / `take_profit_triggered`.
 
 ## 5. Timing estimate
 
@@ -182,9 +136,8 @@ There is no code to start the simulation.
    take part. Thank you for your time.") and logs `consent_declined`.
 3. **Instructions** (short). They say the companies are made up and the price
    movements come from real market data, how many times the chart stops (for
-   each stock and in the practice), that
-   a stop loss or take profit is optional, and that Directions can be opened
-   at any time.
+   each stock and in the practice), and that Directions can be opened at any
+   time.
 4. **Reading the chart** (candle lesson): a drawing of one green candle (price
    went up: open at the bottom of the body, close at the top) and one red
    candle (open at the top, close at the bottom), labeled Open, Close, High,
@@ -197,7 +150,7 @@ There is no code to start the simulation.
 6. **Stocks 1-4**, each preceded by a short "Stock N of 4" screen and followed by
    the rating question "How volatile did this stock feel?" with the line
    "Volatile means how much and how quickly the price moved up and down."
-   under it (the same for every stock), and 1 = Very stable, 7 = Very volatile.
+   under it (the same for every stock), and 1 = Very stable, 5 = Very volatile.
 7. **Thank-you screen:** "You're finished. Thank you for taking part." and a
    quiet line "Your participant code: P-7F3K. If you ever want your answers
    removed, give this code to Noah or Jojo." If `SURVEY_URL` is set in
@@ -252,10 +205,8 @@ discards the session and opens the Home page; **Stay** carries on. On the thank-
 **Continue** button (no code). Continue logs `resumed` and restarts the current
 segment, decision or screen from its start (the chart re-plays the segment from
 its checkpoint, so prices are identical). During a segment the saved state is
-the state at the start of that segment (cash, shares and the active stop loss
-and take profit), so a stop loss or take profit that sold during it sells again
-at the same minute and price, and is recorded once. A decision restarts with
-the shares entry at 0 and the steppers at Keep or Off. The same 3-second hold
+the state at the start of that segment (cash and shares). A decision restarts
+with the shares entry at 0. The same 3-second hold
 ends the session instead. A session saved by an older version of the page
 (before this format) is not offered for continuing.
 
@@ -307,31 +258,20 @@ place. Google Sheets adds new column names to the end of an existing header
 row, so delete old test tabs (Actions, Summary, Sessions) before real data
 collection (README.md).
 
-**Actions** (one row per decision, one per automatic sale and one per rating):
+**Actions** (one row per decision and one per rating):
 `participant_id, version, session_id, position, stock, stock_slot, timeframe,
 checkpoint, action, shares, price, cash, shares_held, portfolio_value, rating,
-decision_ms, timestamp, stop_loss, take_profit`.
-- `action` is `buy`, `sell`, `hold`, `stop_loss_sell`, `take_profit_sell` or
-  `rating`. `cash`, `shares_held` and `portfolio_value` are after the action.
-- `decision_ms` is the time from the checkpoint appearing to the button tap
-  (empty for an automatic sale).
-- `stop_loss` and `take_profit` are the active order prices after the row's
-  action ('' if none, and always '' on automatic-sale and rating rows).
-- An automatic sale row (`stop_loss_sell` / `take_profit_sell`): `shares` =
-  shares sold, `price` = fill price, `shares_held` = 0, `checkpoint` = the
-  number of the last decision before it.
+decision_ms, timestamp`.
+- `action` is `buy`, `sell`, `hold` or `rating`. `cash`, `shares_held` and
+  `portfolio_value` are after the action. `rating` is 1-5 on rating rows.
+- `decision_ms` is the time from the checkpoint appearing to the button tap.
 
 **Summary** (one row per participant x stock):
 `participant_id, version, session_id, position, stock, stock_slot, timeframe,
 volatility_rating, final_price, final_cash, final_shares, final_value,
-final_pct_in_stock, return_pct, trades, timestamp, stop_loss_used,
-take_profit_used, stop_loss_triggered, take_profit_triggered,
-directions_opened`.
-- `trades` counts Buy and Sell decisions (not automatic sales).
-- `stop_loss_used` / `take_profit_used`: 1 if a stop loss / take profit was
-  active after any decision of that stock, else 0.
-- `stop_loss_triggered` / `take_profit_triggered`: how many times one sold
-  (usually 0 or 1).
+final_pct_in_stock, return_pct, trades, timestamp, directions_opened`.
+- `volatility_rating` is 1 (very stable) to 5 (very volatile).
+- `trades` counts Buy and Sell decisions.
 - `directions_opened`: how many times Directions was opened for that stock.
 
 **Sessions** (session events):
@@ -351,10 +291,8 @@ tapped Home and chose Leave; stocks finished before that were already sent).
   scroll, zoom, crosshair or timeframe switching, and no volume or indicators.
 - Tap targets are at least 44 px. Nothing depends on hover.
 - The shares input uses an on-screen numeric keypad (0-9, clear, delete), so the
-  system keyboard never covers the chart. Stop loss and take profit use − and +
-  steppers (no typing).
-- The trade panel fits without scrolling at 1180x820 and 1024x700, with the
-  stop loss / take profit steppers shown or not (they use the keypad's space).
+  system keyboard never covers the chart.
+- The trade panel fits without scrolling at 1180x820 and 1024x700.
 - State is saved to localStorage after every step. After a refresh or a closed
   tab, the page offers "Continue where you left off", which restarts the
   current segment or decision from its start (section 6).
