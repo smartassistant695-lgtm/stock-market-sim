@@ -41,7 +41,6 @@ needs to allow `*.vercel.app`, and your keys stay hidden on the server.
 | Footer: names, school, email, photo credit | `public/js/footer.js` | `EDIT THE FOOTER TEXT HERE` |
 | About Us text | `public/about.html` | `PASTE YOUR ABOUT US TEXT HERE` |
 | Consent text | `public/simulation.html` | `EDIT CONSENT TEXT BELOW` |
-| Names on the thank-you screen (who removes answers) | `public/simulation.html` | `EDIT THE NAMES BELOW` |
 | Timing, cash, number of checkpoints | `public/js/config.js` | comments next to each number |
 | Link to your Google Form survey | `public/js/config.js` | `SURVEY_URL` (see "Connect your Google Form" below) |
 
@@ -182,8 +181,7 @@ row. Keep the `_batches` tab or delete it too; both are fine.
    "Reading the chart" lesson, trades a practice stock, then four stocks (the
    chart stops 4 times per stock; a **Directions** button shows the
    instructions again at any time), and rates each stock from 1 to 5.
-5. The thank-you screen shows their participant code ("If you ever want your
-   answers removed, give this code to Noah or Jojo.") and, if you connected
+5. The thank-you screen shows their participant code and, if you connected
    a Google Form, the survey button. Press and hold the **top-left corner** of
    the screen for 3 seconds (no code). The page goes back to the start screen,
    ready for the next participant. The same hold in the middle of a session

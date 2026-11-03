@@ -152,8 +152,7 @@ There is no code to start the simulation.
    "Volatile means how much and how quickly the price moved up and down."
    under it (the same for every stock), and 1 = Very stable, 5 = Very volatile.
 7. **Thank-you screen:** "You're finished. Thank you for taking part." and a
-   quiet line "Your participant code: P-7F3K. If you ever want your answers
-   removed, give this code to Noah or Jojo." If `SURVEY_URL` is set in
+   quiet line "Your participant code: P-7F3K." If `SURVEY_URL` is set in
    `config.js`, a button **Continue to the short survey** opens that link in
    the same tab with every `PARTICIPANT_CODE` in it replaced by the code, and
    logs the Sessions row `survey_opened`.
@@ -165,9 +164,8 @@ From step 2 on, the navigation and footer are hidden and the page is locked
 is tapped, the iPad makes an anonymous code: `P-` and 4 characters from
 `23456789ABCDEFGHJKMNPQRSTUVWXYZ` (no 0/O or 1/I/L), for example `P-7F3K`. A
 code that already finished on this iPad is never given out again. The code is
-the `participant_id` in every tab and is shown on the thank-you screen, so a
-participant can ask for their answers to be removed and the survey answers can
-be matched to the trading data.
+the `participant_id` in every tab and is shown on the thank-you screen, so the
+survey answers can be matched to the trading data.
 
 **Directions.** A **Directions** button is on the trade screen (top of the
 side panel), on the screen before each stock ("Practice stock", "Stock N of
